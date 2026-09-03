@@ -6,7 +6,9 @@ const parts = fs.readdirSync(process.cwd())
   .filter((name) => /^source\.bundle\.\d+\.b64$/.test(name))
   .sort((a, b) => Number(a.match(/\d+/)?.[0] || 0) - Number(b.match(/\d+/)?.[0] || 0));
 if (!parts.length) process.exit(0);
-const packed = parts.map((name) => fs.readFileSync(path.join(process.cwd(), name), 'utf8').trim()).join('');
+const packed = parts
+  .map((name) => fs.readFileSync(path.join(process.cwd(), name), 'utf8').replace(/[^A-Za-z0-9+/=]/g, ''))
+  .join('');
 const data = JSON.parse(zlib.gunzipSync(Buffer.from(packed, 'base64')).toString('utf8'));
 for (const [relative, value] of Object.entries(data)) {
   const target = path.join(process.cwd(), relative);
