@@ -15,22 +15,9 @@ for (const [relative, value] of Object.entries(data)) {
   else fs.writeFileSync(target, String(value), 'utf8');
 }
 console.log(`Restored ${Object.keys(data).length} source files.`);
-
-function dumpAround(file, needles, radius = 1800) {
-  const text = fs.readFileSync(path.join(process.cwd(), file), 'utf8');
-  console.log(`@@FILE ${file} size=${text.length}`);
-  for (const needle of needles) {
-    const i = text.indexOf(needle);
-    console.log(`@@NEEDLE ${needle} index=${i}`);
-    if (i >= 0) {
-      const start = Math.max(0, i - radius);
-      const end = Math.min(text.length, i + needle.length + radius);
-      console.log(text.slice(start, end));
-    }
+for (const file of ['lib/r2.ts','app/api/uploads/prepare/route.ts','app/api/uploads/complete/route.ts']) {
+  const target = path.join(process.cwd(), file);
+  if (fs.existsSync(target)) {
+    console.log(`@@UPLOAD_FILE ${file}\n${fs.readFileSync(target, 'utf8')}`);
   }
 }
-
-dumpAround('app/api/kpi/route.ts', ['attachments', 'session.role === "evaluator"', 'commission']);
-dumpAround('app/api/files/route.ts', ['session.role === "evaluator"', 'criterion', 'attachment']);
-dumpAround('components/kpi-app.tsx', ['selectedResponsible', 'Mas’ul shaxs belgilanmagan', 'TabsTrigger value="institutions"', 'TabsContent value="evaluations"']);
-throw new Error('DIAGNOSTIC_ONLY');
