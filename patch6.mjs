@@ -84,18 +84,12 @@ patchFile('components/institution-portal.tsx', (text) => {
 });
 
 patchFile('app/api/uploads/prepare/route.ts', (text) => {
-  const lines = text.split(/\r?\n/);
-  const wanted = new Set();
-  lines.forEach((line, index) => {
-    const lower = line.toLowerCase();
-    if (['pdf', 'jpeg', 'word', 'excel', 'contenttype', 'filename', 'extension', 'mime', 'allowed'].some((needle) => lower.includes(needle))) {
-      for (let i = Math.max(0, index - 1); i <= Math.min(lines.length - 1, index + 1); i += 1) wanted.add(i);
-    }
-  });
-  console.log('--- UPLOAD PREPARE HINTS ---');
-  [...wanted].sort((a, b) => a - b).forEach((i) => console.log(`${i + 1}: ${lines[i]}`));
-  console.log('--- END UPLOAD PREPARE HINTS ---');
-  return text + '\n// upload-format-inspection\n';
+  const oldSet = 'const INSTITUTION_EXTENSIONS = new Set(["pdf", "jpg", "jpeg", "doc", "docx", "xls", "xlsx"]);';
+  const newSet = 'const INSTITUTION_EXTENSIONS = new Set(["pdf", "jpg", "jpeg", "doc", "docx", "xls", "xlsx", "zip", "rar"]);';
+  if (!text.includes(oldSet)) throw new Error('institution extension set anchor not found');
+  text = text.replace(oldSet, newSet);
+  text = text.replaceAll('Faqat PDF, JPEG, Word yoki Excel fayl yuklash mumkin.', 'Faqat PDF, JPEG, Word, Excel, ZIP yoki RAR fayl yuklash mumkin.');
+  return text;
 });
 
 console.log('Admin manager + institution file history + ZIP/RAR upload patch applied.');
