@@ -84,12 +84,18 @@ patchFile('components/institution-portal.tsx', (text) => {
 });
 
 patchFile('app/api/uploads/prepare/route.ts', (text) => {
-  const xlsxToken = /(["'])\.xlsx\1/;
-  if (!xlsxToken.test(text)) throw new Error('upload .xlsx anchor not found');
-  text = text.replace(xlsxToken, (_match, quote) => `${quote}.xlsx${quote}, ${quote}.zip${quote}, ${quote}.rar${quote}`);
-  text = text.replace('Faqat PDF, JPEG, Word yoki Excel fayl yuklash mumkin.', 'Faqat PDF, JPEG, Word, Excel, ZIP yoki RAR fayl yuklash mumkin.');
-  text = text.replace('PDF, JPEG, Word yoki Excel', 'PDF, JPEG, Word, Excel, ZIP yoki RAR');
-  return text;
+  const lines = text.split(/\r?\n/);
+  const wanted = new Set();
+  lines.forEach((line, index) => {
+    const lower = line.toLowerCase();
+    if (['pdf', 'jpeg', 'word', 'excel', 'contenttype', 'filename', 'extension', 'mime', 'allowed'].some((needle) => lower.includes(needle))) {
+      for (let i = Math.max(0, index - 1); i <= Math.min(lines.length - 1, index + 1); i += 1) wanted.add(i);
+    }
+  });
+  console.log('--- UPLOAD PREPARE HINTS ---');
+  [...wanted].sort((a, b) => a - b).forEach((i) => console.log(`${i + 1}: ${lines[i]}`));
+  console.log('--- END UPLOAD PREPARE HINTS ---');
+  return text + '\n// upload-format-inspection\n';
 });
 
 console.log('Admin manager + institution file history + ZIP/RAR upload patch applied.');
