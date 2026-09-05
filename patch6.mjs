@@ -46,3 +46,26 @@ patchFile('components/kpi-app.tsx', (text) => {
 });
 
 console.log('Admin institution/login/password manager patch applied.');
+
+function inspectFile(relative, needles) {
+  const target = path.join(process.cwd(), relative);
+  if (!fs.existsSync(target)) {
+    console.log(`INSPECT MISSING ${relative}`);
+    return;
+  }
+  const lines = fs.readFileSync(target, 'utf8').split(/\r?\n/);
+  const wanted = new Set();
+  lines.forEach((line, index) => {
+    if (needles.some((needle) => line.toLowerCase().includes(needle.toLowerCase()))) {
+      for (let i = Math.max(0, index - 2); i <= Math.min(lines.length - 1, index + 2); i += 1) wanted.add(i);
+    }
+  });
+  console.log(`--- INSPECT ${relative} ---`);
+  [...wanted].sort((a, b) => a - b).forEach((i) => console.log(`${i + 1}: ${lines[i]}`));
+  console.log(`--- END INSPECT ${relative} ---`);
+}
+
+inspectFile('components/institution-portal.tsx', ['ACCEPT', 'MAX_FILE_BYTES', 'responsible-card', 'uploadFileToNetlify', 'criteria', 'attachments', 'type="file"', 'PDF, JPEG']);
+inspectFile('app/api/uploads/prepare/route.ts', ['allowed', 'accept', 'mime', 'contentType', 'filename', 'extension', '.xlsx', 'fayl turi']);
+inspectFile('app/api/uploads/complete/route.ts', ['allowed', 'mime', 'contentType', 'filename', 'extension', '.xlsx', 'attachments']);
+inspectFile('app/api/institution/route.ts', ['criteria', 'attachments', 'orderResult', 'Response.json', 'SELECT', 'submission_date']);
