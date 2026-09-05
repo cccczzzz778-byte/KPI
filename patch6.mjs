@@ -84,14 +84,11 @@ patchFile('components/institution-portal.tsx', (text) => {
 });
 
 patchFile('app/api/uploads/prepare/route.ts', (text) => {
-  const extensionList = /(\[[^\]\n]*["']\.xlsx["'][^\]\n]*)(\]\.includes\(extension\))/;
-  if (!extensionList.test(text)) throw new Error('upload extension whitelist anchor not found');
-  text = text.replace(extensionList, (_match, list, suffix) => {
-    const withZip = String(list).includes('.zip') ? String(list) : `${list}, ".zip"`;
-    const withRar = withZip.includes('.rar') ? withZip : `${withZip}, ".rar"`;
-    return withRar + suffix;
-  });
+  const xlsxToken = /(["'])\.xlsx\1/;
+  if (!xlsxToken.test(text)) throw new Error('upload .xlsx anchor not found');
+  text = text.replace(xlsxToken, (_match, quote) => `${quote}.xlsx${quote}, ${quote}.zip${quote}, ${quote}.rar${quote}`);
   text = text.replace('Faqat PDF, JPEG, Word yoki Excel fayl yuklash mumkin.', 'Faqat PDF, JPEG, Word, Excel, ZIP yoki RAR fayl yuklash mumkin.');
+  text = text.replace('PDF, JPEG, Word yoki Excel', 'PDF, JPEG, Word, Excel, ZIP yoki RAR');
   return text;
 });
 
