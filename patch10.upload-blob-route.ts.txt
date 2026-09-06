@@ -1,0 +1,135 @@
+import { createHash } from "node:crypto";
+import { getKpiDatabase } from "@/lib/netlify-db";
+import { putR2Object, isR2Configured } from "@/lib/r2";
+import { accessErrorResponse, AccessError, requireAppUser } from "@/lib/server-auth";
+
+export const runtime = "nodejs";
+
+const MAX_FILE_SIZE = 30 * 1024 * 1024;
+const ALLOWED_EXTENSIONS = new Set(["pdf", "jpg", "jpeg", "doc", "docx", "xls", "xlsx", "zip", "rar"]);
+
+type UploadIntent = {
+  tokenHash?: string;
+  objectKey: string;
+  filename: string;
+  contentType: string;
+  sizeBytes: number;
+  uploadedBy: string;
+  expiresAt: number;
+  uploadedAt?: number;
+  [key: string]: unknown;
+};
+
+function digest(value: string) {
+  return createHash("sha256").update(value, "utf8").digest("hex");
+}
+
+function extension(filename: string) {
+  return filename.toLowerCase().split(".").pop() || "";
+}
+
+function startsWith(bytes: Uint8Array, signature: number[]) {
+  return signature.every((value, index) => bytes[index] === value);
+}
+
+function containsAscii(bytes: Uint8Array, needle: string) {
+  return Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength).includes(Buffer.from(needle, "ascii"));
+}
+
+function isZip(bytes: Uint8Array) {
+  return startsWith(bytes, [0x50, 0x4b, 0x03, 0x04]) ||
+    startsWith(bytes, [0x50, 0x4b, 0x05, 0x06]) ||
+    startsWith(bytes, [0x50, 0x4b, 0x07, 0x08]);
+}
+
+function isOle(bytes: Uint8Array) {
+  return startsWith(bytes, [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]);
+}
+
+function validateMagic(ext: string, bytes: Uint8Array) {
+  if (!ALLOWED_EXTENSIONS.has(ext)) return false;
+  if (ext === "pdf") return containsAscii(bytes.subarray(0, Math.min(1024, bytes.length)), "%PDF-");
+  if (ext === "jpg" || ext === "jpeg") return startsWith(bytes, [0xff, 0xd8, 0xff]);
+  if (ext === "doc" || ext === "xls") return isOle(bytes);
+  if (ext === "docx") return isZip(bytes) && containsAscii(bytes, "[Content_Types].xml") && containsAscii(bytes, "word/");
+  if (ext === "xlsx") return isZip(bytes) && containsAscii(bytes, "[Content_Types].xml") && containsAscii(bytes, "xl/");
+  if (ext === "zip") return isZip(bytes);
+  if (ext === "rar") {
+    return startsWith(bytes, [0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x00]) ||
+      startsWith(bytes, [0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x01, 0x00]);
+  }
+  return false;
+}
+
+function canonicalContentType(ext: string) {
+  const map: Record<string, string> = {
+    pdf: "application/pdf",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    doc: "application/msword",
+    docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    xls: "application/vnd.ms-excel",
+    xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    zip: "application/zip",
+    rar: "application/vnd.rar",
+  };
+  return map[ext] || "application/octet-stream";
+}
+
+export async function PUT(request: Request) {
+  try {
+    const session = await requireAppUser(request);
+    if (!isR2Configured()) return Response.json({ error: "Railway Storage Bucket sozlanmagan." }, { status: 503 });
+
+    const url = new URL(request.url);
+    const uploadId = url.searchParams.get("uploadId")?.trim() || "";
+    const rawUploadToken = request.headers.get("x-kpi-upload-token")?.trim() || "";
+    if (!uploadId || !rawUploadToken || rawUploadToken.length > 256) {
+      return Response.json({ error: "Yuklash tokeni yetishmaydi." }, { status: 400 });
+    }
+
+    const tokenHash = digest(rawUploadToken);
+    const db = getKpiDatabase();
+    const result = await db.pool.query(
+      "SELECT payload FROM upload_intents WHERE id=$1 AND token=$2 AND expires_at>NOW() LIMIT 1",
+      [uploadId, tokenHash],
+    );
+    const intent = (result.rows[0]?.payload as UploadIntent | undefined) ?? null;
+    if (!intent) return Response.json({ error: "Yuklash tokeni noto‘g‘ri yoki eskirgan." }, { status: 403 });
+    if (intent.uploadedBy !== session.email) throw new AccessError("Bu yuklash boshqa foydalanuvchiga tegishli.");
+    if (intent.uploadedAt) return Response.json({ error: "Bu yuklash tokeni avval ishlatilgan." }, { status: 409 });
+
+    const body = new Uint8Array(await request.arrayBuffer());
+    if (body.byteLength !== Number(intent.sizeBytes)) {
+      return Response.json({ error: "Fayl hajmi tayyorlangan yuklash hajmiga mos emas." }, { status: 400 });
+    }
+    if (body.byteLength <= 0 || body.byteLength > MAX_FILE_SIZE) {
+      return Response.json({ error: "Fayl hajmi 30 MB dan oshmasligi kerak." }, { status: 400 });
+    }
+
+    const ext = extension(String(intent.filename || ""));
+    if (!validateMagic(ext, body)) {
+      await db.pool.query("DELETE FROM upload_intents WHERE id=$1", [uploadId]).catch(() => undefined);
+      return Response.json(
+        { error: "Fayl turi va uning haqiqiy tarkibi mos emas. Fayl buzilgan yoki xavfsizlik tekshiruvidan o‘tmadi." },
+        { status: 400 },
+      );
+    }
+
+    const contentType = canonicalContentType(ext);
+    await putR2Object({ key: intent.objectKey, body, contentType });
+
+    const updatedIntent = {
+      ...intent,
+      tokenHash,
+      contentType,
+      uploadedAt: Date.now(),
+      sha256: createHash("sha256").update(body).digest("hex"),
+    };
+    await db.pool.query("UPDATE upload_intents SET payload=$2::jsonb WHERE id=$1 AND token=$3", [uploadId, JSON.stringify(updatedIntent), tokenHash]);
+
+    return Response.json({ uploaded: true }, { headers: { "cache-control": "no-store" } });
+  } catch (error) {
+    return accessErrorResponse(error);
+  }
+}
