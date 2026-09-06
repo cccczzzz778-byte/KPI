@@ -1,16 +1,28 @@
 import fs from 'node:fs';
+import path from 'node:path';
 
-function show(file, mapper) {
-  if (!fs.existsSync(file)) return;
-  const text = fs.readFileSync(file, 'utf8');
-  console.log(`\n=== SECURITY_INSPECT:${file} ===\n`);
-  console.log(mapper ? mapper(text) : text);
-  console.log(`\n=== END_SECURITY_INSPECT:${file} ===\n`);
+function walk(dir) {
+  const out = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (!['node_modules','.next','.git'].includes(entry.name)) out.push(...walk(full));
+    } else if (/\.(ts|tsx|js|mjs)$/.test(entry.name)) out.push(full);
+  }
+  return out;
 }
 
-show('lib/password.ts');
-show('components/institution-portal.tsx', (text) => text.split('\n').filter((line) => /uploadUrl|uploadHeaders|fetch\(|uploads\/prepare|uploads\/complete|method:\s*["']PUT/.test(line)).join('\n'));
-show('components/kpi-app.tsx', (text) => text.split('\n').filter((line) => /uploadUrl|uploadHeaders|fetch\(|uploads\/prepare|uploads\/complete|method:\s*["']PUT/.test(line)).join('\n'));
-show('db/migrations/001_initial/migration.sql');
-show('db/migrations/002_storage/migration.sql');
-show('db/migrations/003_auth/migration.sql');
+for (const file of walk(process.cwd())) {
+  const text = fs.readFileSync(file, 'utf8');
+  if (!/uploads\/prepare|uploadUrl|uploadHeaders/.test(text)) continue;
+  console.log(`\n=== SECURITY_INSPECT_UPLOAD:${path.relative(process.cwd(), file)} ===`);
+  const lines = text.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    if (/uploads\/prepare|uploads\/complete|uploadUrl|uploadHeaders|method:\s*["']PUT/.test(lines[i])) {
+      const start = Math.max(0, i - 5);
+      const end = Math.min(lines.length, i + 10);
+      console.log(lines.slice(start, end).join('\n'));
+      console.log('---');
+    }
+  }
+}
