@@ -1,0 +1,107 @@
+import { criteria } from "@/lib/kpi-data";
+import { getKpiDatabase } from "@/lib/netlify-db";
+import { AccessError, accessErrorResponse, requireAppUser } from "@/lib/server-auth";
+
+export const runtime = "nodejs";
+
+function clean(value: string | null) {
+  return String(value ?? "").trim();
+}
+
+async function requireAdmin(request: Request) {
+  const session = await requireAppUser(request);
+  if (session.role !== "admin") throw new AccessError("Bu bo‘lim faqat administrator uchun.", 403);
+  return session;
+}
+
+export async function GET(request: Request) {
+  try {
+    await requireAdmin(request);
+    const url = new URL(request.url);
+    const q = clean(url.searchParams.get("q")).toLocaleLowerCase("uz");
+    const institutionId = clean(url.searchParams.get("institutionId"));
+    const date = clean(url.searchParams.get("date"));
+    const kind = clean(url.searchParams.get("kind"));
+    const limit = Math.min(200, Math.max(20, Number(url.searchParams.get("limit") || 100)));
+    const offset = Math.max(0, Number(url.searchParams.get("offset") || 0));
+
+    const where: string[] = ["1=1"];
+    const params: unknown[] = [];
+    const add = (value: unknown) => {
+      params.push(value);
+      return `$${params.length}`;
+    };
+
+    if (q) {
+      const p = add(`%${q}%`);
+      where.push(`(LOWER(COALESCE(a.filename, '')) LIKE ${p} OR LOWER(COALESCE(i.name, '')) LIKE ${p} OR LOWER(COALESCE(a.criterion_id, '')) LIKE ${p})`);
+    }
+    if (institutionId) where.push(`a.institution_id = ${add(institutionId)}`);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      const p = add(date);
+      where.push(`(a.submission_date = ${p}::date OR DATE(a.created_at) = ${p}::date)`);
+    }
+    if (kind === "order") where.push("a.source = 'institution_order'");
+    else if (kind === "criterion") where.push("a.source = 'institution_submission'");
+    else if (kind === "other") where.push("a.source NOT IN ('institution_order', 'institution_submission')");
+
+    const db = getKpiDatabase();
+    const whereSql = where.join(" AND ");
+    const countResult = await db.pool.query(
+      `SELECT COUNT(*)::int AS total FROM attachments a LEFT JOIN institutions i ON i.id = a.institution_id WHERE ${whereSql}`,
+      params,
+    );
+
+    const rowParams = [...params, limit, offset];
+    const limitParam = `$${params.length + 1}`;
+    const offsetParam = `$${params.length + 2}`;
+    const result = await db.pool.query(
+      `SELECT a.id,
+              a.institution_id AS "institutionId",
+              COALESCE(i.name, a.institution_id) AS "institutionName",
+              a.criterion_id AS "criterionId",
+              a.round_day AS "roundDay",
+              a.filename,
+              a.content_type AS "contentType",
+              a.size_bytes AS "sizeBytes",
+              a.source,
+              a.responsible_name AS "responsibleName",
+              a.responsible_phone AS "responsiblePhone",
+              TO_CHAR(a.submission_date, 'YYYY-MM-DD') AS "submissionDate",
+              a.created_at AS "createdAt"
+         FROM attachments a
+         LEFT JOIN institutions i ON i.id = a.institution_id
+        WHERE ${whereSql}
+        ORDER BY a.created_at DESC
+        LIMIT ${limitParam} OFFSET ${offsetParam}`,
+      rowParams,
+    );
+
+    const items = result.rows.map((row) => {
+      const criterion = criteria.find((item) => item.id === row.criterionId);
+      return {
+        ...row,
+        criterionTitle: row.source === "institution_order"
+          ? "BUYRUQ (chora-tadbir)"
+          : criterion?.title || row.criterionId || "Mezon ko‘rsatilmagan",
+        sourceLabel: row.source === "institution_order"
+          ? "BUYRUQ"
+          : row.source === "institution_submission"
+            ? "Muassasa mezon fayli"
+            : "Baholash asosi",
+      };
+    });
+
+    const institutionsResult = await db.pool.query(
+      "SELECT id, name FROM institutions WHERE active=1 ORDER BY name ASC",
+    );
+
+    return Response.json({
+      items,
+      total: Number(countResult.rows[0]?.total || 0),
+      institutions: institutionsResult.rows.map((row) => ({ id: String(row.id), name: String(row.name) })),
+    });
+  } catch (error) {
+    return accessErrorResponse(error);
+  }
+}

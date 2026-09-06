@@ -1,0 +1,194 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { Download, Eye, FileArchive, FileText, Search, X } from "lucide-react";
+
+type FileItem = {
+  id: string;
+  institutionId: string;
+  institutionName: string;
+  criterionId?: string;
+  criterionTitle: string;
+  roundDay?: number | null;
+  filename: string;
+  contentType?: string;
+  sizeBytes?: number;
+  source: string;
+  sourceLabel: string;
+  submissionDate?: string;
+  createdAt?: string;
+};
+
+type InstitutionOption = { id: string; name: string };
+type Payload = { items?: FileItem[]; total?: number; institutions?: InstitutionOption[]; error?: string };
+
+const PAGE_SIZE = 100;
+
+function formatBytes(bytes?: number) {
+  const value = Number(bytes || 0);
+  if (!Number.isFinite(value) || value <= 0) return "—";
+  if (value < 1024 * 1024) return `${Math.max(1, Math.round(value / 1024))} KB`;
+  return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatDate(item: FileItem) {
+  if (item.submissionDate) return item.submissionDate;
+  if (!item.createdAt) return "—";
+  const date = new Date(item.createdAt);
+  return Number.isNaN(date.getTime()) ? item.createdAt : date.toLocaleDateString("uz-UZ");
+}
+
+function canPreview(item: FileItem) {
+  const type = String(item.contentType || "").toLowerCase();
+  const name = String(item.filename || "").toLowerCase();
+  return type === "application/pdf" || type.startsWith("image/") || /\.(pdf|jpe?g|png|webp|gif)$/i.test(name);
+}
+
+function FileName({ item }: { item: FileItem }) {
+  const archive = /\.(zip|rar)$/i.test(item.filename);
+  return <div className="admin-file-name-wrap" title={item.filename}>
+    <span className="admin-file-icon" aria-hidden="true">{archive ? <FileArchive size={18} /> : <FileText size={18} />}</span>
+    <span className="admin-file-name">{item.filename}</span>
+  </div>;
+}
+
+export function AdminFileArchive() {
+  const [items, setItems] = useState<FileItem[]>([]);
+  const [institutions, setInstitutions] = useState<InstitutionOption[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [queryInput, setQueryInput] = useState("");
+  const [query, setQuery] = useState("");
+  const [institutionId, setInstitutionId] = useState("");
+  const [date, setDate] = useState("");
+  const [kind, setKind] = useState("");
+  const [page, setPage] = useState(0);
+  const [preview, setPreview] = useState<FileItem | null>(null);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setQuery(queryInput.trim()), 350);
+    return () => window.clearTimeout(timer);
+  }, [queryInput]);
+
+  useEffect(() => setPage(0), [query, institutionId, date, kind]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const params = new URLSearchParams({ limit: String(PAGE_SIZE), offset: String(page * PAGE_SIZE) });
+    if (query) params.set("q", query);
+    if (institutionId) params.set("institutionId", institutionId);
+    if (date) params.set("date", date);
+    if (kind) params.set("kind", kind);
+    setLoading(true);
+    setError("");
+    fetch(`/api/admin/files?${params.toString()}`, { cache: "no-store", signal: controller.signal })
+      .then(async (response) => {
+        const payload = await response.json() as Payload;
+        if (!response.ok) throw new Error(payload.error || "Fayllarni yuklab bo‘lmadi.");
+        return payload;
+      })
+      .then((payload) => {
+        setItems(payload.items || []);
+        setTotal(Number(payload.total || 0));
+        if (payload.institutions) setInstitutions(payload.institutions);
+      })
+      .catch((reason: unknown) => {
+        if (controller.signal.aborted) return;
+        setError(reason instanceof Error ? reason.message : "Xatolik yuz berdi.");
+      })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    return () => controller.abort();
+  }, [query, institutionId, date, kind, page]);
+
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const visibleFrom = total ? page * PAGE_SIZE + 1 : 0;
+  const visibleTo = Math.min(total, (page + 1) * PAGE_SIZE);
+  const hasFilters = Boolean(queryInput || institutionId || date || kind);
+
+  const previewTitle = useMemo(() => preview?.filename || "Faylni ko‘rish", [preview]);
+
+  function clearFilters() {
+    setQueryInput("");
+    setQuery("");
+    setInstitutionId("");
+    setDate("");
+    setKind("");
+    setPage(0);
+  }
+
+  return <section className="admin-file-archive">
+    <div className="admin-file-header">
+      <div>
+        <h3>Yuklangan fayllar arxivi</h3>
+        <p>Muassasa, mezon va sana kesimida barcha yuklangan fayllarni ko‘ring.</p>
+      </div>
+      <div className="admin-file-count">{total.toLocaleString("uz-UZ")} ta fayl</div>
+    </div>
+
+    <div className="admin-file-filters">
+      <label className="admin-file-search">
+        <Search size={17} aria-hidden="true" />
+        <input value={queryInput} onChange={(event) => setQueryInput(event.target.value)} placeholder="Fayl yoki muassasa nomi..." />
+      </label>
+      <select value={institutionId} onChange={(event) => setInstitutionId(event.target.value)} aria-label="Muassasa">
+        <option value="">Barcha muassasalar</option>
+        {institutions.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+      </select>
+      <input type="date" value={date} onChange={(event) => setDate(event.target.value)} aria-label="Sana" />
+      <select value={kind} onChange={(event) => setKind(event.target.value)} aria-label="Fayl turi">
+        <option value="">Barcha fayllar</option>
+        <option value="criterion">Mezon fayllari</option>
+        <option value="order">BUYRUQ fayllari</option>
+        <option value="other">Boshqa asoslar</option>
+      </select>
+      {hasFilters && <button type="button" className="admin-file-clear" onClick={clearFilters}><X size={16} /> Tozalash</button>}
+    </div>
+
+    {loading ? <div className="admin-file-state">Fayllar yuklanmoqda...</div> : error ? <div className="admin-file-state admin-file-error">{error}</div> : items.length === 0 ? <div className="admin-file-state">Fayl topilmadi.</div> : <>
+      <div className="admin-file-desktop-table">
+        <table>
+          <thead><tr><th>Sana</th><th>Muassasa</th><th>Mezon</th><th>Fayl</th><th>Hajm</th><th>Amal</th></tr></thead>
+          <tbody>{items.map((item) => <tr key={item.id}>
+            <td className="admin-file-date">{formatDate(item)}</td>
+            <td><strong className="admin-file-institution">{item.institutionName}</strong></td>
+            <td><span className="admin-file-criterion">{item.criterionTitle}</span><small>{item.sourceLabel}{item.roundDay ? ` · ${item.roundDay}-kunlik` : ""}</small></td>
+            <td><FileName item={item} /></td>
+            <td className="admin-file-size">{formatBytes(item.sizeBytes)}</td>
+            <td><div className="admin-file-actions">
+              {canPreview(item) && <button type="button" onClick={() => setPreview(item)}><Eye size={16} /> Ko‘rish</button>}
+              <a href={`/api/files?id=${encodeURIComponent(item.id)}`}><Download size={16} /> Yuklash</a>
+            </div></td>
+          </tr>)}</tbody>
+        </table>
+      </div>
+
+      <div className="admin-file-mobile-list">
+        {items.map((item) => <article className="admin-file-card" key={item.id}>
+          <div className="admin-file-card-top"><span>{formatDate(item)}</span><span>{formatBytes(item.sizeBytes)}</span></div>
+          <strong className="admin-file-card-institution">{item.institutionName}</strong>
+          <div className="admin-file-card-criterion">{item.criterionTitle}</div>
+          <small>{item.sourceLabel}{item.roundDay ? ` · ${item.roundDay}-kunlik` : ""}</small>
+          <FileName item={item} />
+          <div className="admin-file-actions admin-file-actions-mobile">
+            {canPreview(item) && <button type="button" onClick={() => setPreview(item)}><Eye size={16} /> Online ko‘rish</button>}
+            <a href={`/api/files?id=${encodeURIComponent(item.id)}`}><Download size={16} /> Yuklab olish</a>
+          </div>
+        </article>)}
+      </div>
+
+      <div className="admin-file-pagination">
+        <span>{visibleFrom}–{visibleTo} / {total}</span>
+        <div><button type="button" disabled={page <= 0} onClick={() => setPage((value) => Math.max(0, value - 1))}>Oldingi</button><span>{page + 1} / {pageCount}</span><button type="button" disabled={page + 1 >= pageCount} onClick={() => setPage((value) => value + 1)}>Keyingi</button></div>
+      </div>
+    </>}
+
+    {preview && <div className="admin-file-preview-backdrop" role="dialog" aria-modal="true" aria-label={previewTitle} onMouseDown={(event) => { if (event.target === event.currentTarget) setPreview(null); }}>
+      <div className="admin-file-preview-modal">
+        <div className="admin-file-preview-head"><div><strong title={preview.filename}>{preview.filename}</strong><span>{preview.institutionName} · {preview.criterionTitle}</span></div><button type="button" onClick={() => setPreview(null)} aria-label="Yopish"><X size={20} /></button></div>
+        <iframe title={previewTitle} src={`/api/files?id=${encodeURIComponent(preview.id)}&view=1`} />
+        <div className="admin-file-preview-foot"><a href={`/api/files?id=${encodeURIComponent(preview.id)}`}><Download size={16} /> Yuklab olish</a><a href={`/api/files?id=${encodeURIComponent(preview.id)}&view=1`} target="_blank" rel="noreferrer"><Eye size={16} /> Yangi oynada</a></div>
+      </div>
+    </div>}
+  </section>;
+}
