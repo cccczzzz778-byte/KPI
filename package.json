@@ -12,7 +12,8 @@
     "test": "node --test tests/*.test.mjs",
     "lint": "eslint .",
     "migrate": "node scripts/migrate.mjs",
-    "preinstall": "node bootstrap.mjs && node patch3.mjs && node patch4.mjs && node patch5.mjs && node patch6.mjs && node patch7.mjs"
+    "preinstall": "node bootstrap.mjs && node patch3.mjs && node patch4.mjs && node patch5.mjs && node patch6.mjs && node patch7.mjs && node patch8.mjs",
+    "postinstall": "node copy-pdf-worker.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
@@ -40,6 +41,7 @@
     "zod": "^3.25.76",
     "@aws-sdk/client-s3": "latest",
     "@aws-sdk/s3-request-presigner": "latest",
+    "pdfjs-dist": "latest",
     "pg": "^8.16.3"
   },
   "devDependencies": {
