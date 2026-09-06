@@ -1,0 +1,36 @@
+import { NextResponse, type NextRequest } from "next/server";
+
+function firstHeader(value: string | null) {
+  return (value || "").split(",")[0]?.trim() || "";
+}
+
+export function proxy(request: NextRequest) {
+  const method = request.method.toUpperCase();
+  if (method === "GET" || method === "HEAD" || method === "OPTIONS") return NextResponse.next();
+
+  const fetchSite = request.headers.get("sec-fetch-site");
+  if (fetchSite && fetchSite !== "same-origin" && fetchSite !== "none") {
+    return NextResponse.json(
+      { error: "Xavfsizlik siyosati: boshqa saytdan yuborilgan so‘rov bloklandi." },
+      { status: 403, headers: { "cache-control": "no-store" } },
+    );
+  }
+
+  const origin = request.headers.get("origin");
+  if (origin) {
+    const host = firstHeader(request.headers.get("x-forwarded-host")) || firstHeader(request.headers.get("host"));
+    const proto = firstHeader(request.headers.get("x-forwarded-proto")) || request.nextUrl.protocol.replace(":", "") || "https";
+    if (!host || origin !== `${proto}://${host}`) {
+      return NextResponse.json(
+        { error: "Xavfsizlik siyosati: Origin mos kelmadi." },
+        { status: 403, headers: { "cache-control": "no-store" } },
+      );
+    }
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: ["/api/:path*"],
+};
