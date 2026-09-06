@@ -1,0 +1,125 @@
+import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+import { getKpiDatabase } from "@/lib/netlify-db";
+
+export type AppRole = "admin" | "evaluator" | "monitor" | "institution";
+
+export type AppUser = {
+  email: string;
+  name: string;
+  role: AppRole;
+  commission: string;
+  active: number;
+  institutionId: string;
+};
+
+type SessionRow = AppUser & {
+  lastSeenAt: Date | string;
+  sessionUserAgentHash: string;
+};
+
+export class AccessError extends Error {
+  status: number;
+
+  constructor(message: string, status = 403) {
+    super(message);
+    this.status = status;
+  }
+}
+
+function readCookie(request: Request, name: string) {
+  const cookie = request.headers.get("cookie") ?? "";
+  for (const part of cookie.split(";")) {
+    const [key, ...rest] = part.trim().split("=");
+    if (key !== name) continue;
+    try {
+      return decodeURIComponent(rest.join("="));
+    } catch {
+      return "";
+    }
+  }
+  return "";
+}
+
+export function sessionTokenFromRequest(request: Request) {
+  return readCookie(request, "__Host-kpi_session") || readCookie(request, "kpi_session");
+}
+
+export function sessionDigest(token: string) {
+  return createHash("sha256").update(token, "utf8").digest("hex");
+}
+
+export function privacyDigest(value: string) {
+  const pepper = process.env.SECURITY_PEPPER || "kpi-development-security-pepper";
+  return createHmac("sha256", pepper).update(value, "utf8").digest("hex");
+}
+
+function sameDigest(a: string, b: string) {
+  if (!a || !b || a.length !== b.length) return false;
+  try {
+    return timingSafeEqual(Buffer.from(a, "hex"), Buffer.from(b, "hex"));
+  } catch {
+    return false;
+  }
+}
+
+export async function requireAppUser(request: Request): Promise<AppUser> {
+  const rawToken = sessionTokenFromRequest(request);
+  if (!rawToken || rawToken.length > 256) throw new AccessError("Tizimga kirish talab qilinadi.", 401);
+
+  const tokenHash = sessionDigest(rawToken);
+  const db = getKpiDatabase();
+  const { rows } = await db.pool.query(
+    `SELECT u.email,
+            u.name,
+            u.role,
+            u.commission,
+            u.active,
+            u.institution_id AS "institutionId",
+            s.last_seen_at AS "lastSeenAt",
+            s.user_agent_hash AS "sessionUserAgentHash"
+       FROM sessions s
+       JOIN users u ON u.email = s.user_email
+      WHERE s.token = $1
+        AND s.expires_at > NOW()
+        AND s.last_seen_at > NOW() - INTERVAL '2 hours'
+      LIMIT 1`,
+    [tokenHash],
+  );
+  const existing = rows[0] as SessionRow | undefined;
+  if (!existing) throw new AccessError("Sessiya tugagan. Qayta kiring.", 401);
+  if (!existing.active) throw new AccessError("Foydalanuvchi hisobi bloklangan.", 403);
+
+  const currentUaHash = privacyDigest((request.headers.get("user-agent") || "unknown").slice(0, 512));
+  if (existing.sessionUserAgentHash && !sameDigest(existing.sessionUserAgentHash, currentUaHash)) {
+    await db.pool.query("DELETE FROM sessions WHERE token=$1", [tokenHash]).catch(() => undefined);
+    throw new AccessError("Sessiya xavfsizlik sababli yakunlandi. Qayta kiring.", 401);
+  }
+
+  const lastSeen = new Date(existing.lastSeenAt).getTime();
+  if (!Number.isFinite(lastSeen) || Date.now() - lastSeen > 5 * 60 * 1000) {
+    await db.pool.query("UPDATE sessions SET last_seen_at=NOW() WHERE token=$1", [tokenHash]).catch(() => undefined);
+  }
+
+  return {
+    email: existing.email,
+    name: existing.name,
+    role: existing.role,
+    commission: existing.commission,
+    active: existing.active,
+    institutionId: existing.institutionId,
+  };
+}
+
+export function accessErrorResponse(error: unknown) {
+  if (error instanceof AccessError) {
+    return Response.json(
+      { error: error.message },
+      { status: error.status, headers: { "cache-control": "no-store" } },
+    );
+  }
+  console.error("Unhandled API error", error);
+  return Response.json(
+    { error: "Serverda kutilmagan xatolik yuz berdi." },
+    { status: 500, headers: { "cache-control": "no-store" } },
+  );
+}
