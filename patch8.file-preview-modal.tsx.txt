@@ -74,15 +74,15 @@ function PdfCanvas({ file }: { file: PreviewFile }) {
           disableRange: true,
           disableStream: true,
           useSystemFonts: true,
-        });
+        } as any);
         loadingTaskRef.current = task;
-        const document = await task.promise;
+        const document: any = await task.promise;
         if (cancelled) {
-          await document.destroy();
+          try { await document?.destroy?.(); } catch {}
           return;
         }
         documentRef.current = document;
-        setPageCount(document.numPages);
+        setPageCount(Number(document.numPages || 0));
       } catch (reason) {
         if (!cancelled) setError(reason instanceof Error ? reason.message : "PDF faylni ochib bo‘lmadi.");
       } finally {
@@ -112,7 +112,7 @@ function PdfCanvas({ file }: { file: PreviewFile }) {
     void (async () => {
       try {
         try { renderTaskRef.current?.cancel?.(); } catch {}
-        const page = await document.getPage(pageNumber);
+        const page: any = await document.getPage(pageNumber);
         if (cancelled) return;
         const base = page.getViewport({ scale: 1, rotation });
         const available = Math.max(260, hostWidth - 24);
@@ -131,7 +131,7 @@ function PdfCanvas({ file }: { file: PreviewFile }) {
           canvasContext: context,
           viewport,
           transform: dpr === 1 ? undefined : [dpr, 0, 0, dpr, 0, 0],
-        });
+        } as any);
         renderTaskRef.current = task;
         await task.promise;
       } catch (reason: any) {
