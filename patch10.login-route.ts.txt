@@ -1,0 +1,178 @@
+import { randomBytes } from "node:crypto";
+import { getKpiDatabase } from "@/lib/netlify-db";
+import { verifyPassword } from "@/lib/password";
+import { privacyDigest, sessionDigest } from "@/lib/server-auth";
+
+export const runtime = "nodejs";
+
+const DUMMY_HASH = "scrypt$security-dummy-salt-2026$1aaa7e87ceb3d20a82a6f194d253470c8d357636968d169f4e8cd3e3e4d89eb2";
+const MAX_BODY_BYTES = 8192;
+
+type Db = ReturnType<typeof getKpiDatabase>;
+type Rule = { key: string; scope: string; limit: number; windowMinutes: number; blockMinutes: number };
+
+function clientIp(request: Request) {
+  const forwarded = request.headers.get("x-forwarded-for") || "";
+  const value = forwarded.split(",")[0]?.trim() || request.headers.get("x-real-ip")?.trim() || "unknown";
+  return value.slice(0, 128);
+}
+
+async function blockedSeconds(db: Db, rule: Rule) {
+  const result = await db.pool.query(
+    "SELECT blocked_until FROM auth_throttles WHERE key_hash=$1 LIMIT 1",
+    [rule.key],
+  );
+  const blockedUntil = result.rows[0]?.blocked_until ? new Date(result.rows[0].blocked_until).getTime() : 0;
+  return blockedUntil > Date.now() ? Math.max(1, Math.ceil((blockedUntil - Date.now()) / 1000)) : 0;
+}
+
+async function recordFailure(db: Db, rule: Rule) {
+  const result = await db.pool.query(
+    "SELECT failure_count, window_started_at, blocked_until FROM auth_throttles WHERE key_hash=$1 LIMIT 1",
+    [rule.key],
+  );
+  const now = Date.now();
+  const row = result.rows[0];
+  const oldStarted = row?.window_started_at ? new Date(row.window_started_at).getTime() : 0;
+  const freshWindow = Number.isFinite(oldStarted) && now - oldStarted < rule.windowMinutes * 60_000;
+  const failureCount = freshWindow ? Number(row?.failure_count || 0) + 1 : 1;
+  const windowStartedAt = freshWindow ? new Date(oldStarted) : new Date(now);
+  const oldBlocked = row?.blocked_until ? new Date(row.blocked_until).getTime() : 0;
+  const blockedUntil = failureCount >= rule.limit
+    ? new Date(Math.max(oldBlocked, now + rule.blockMinutes * 60_000))
+    : oldBlocked > now ? new Date(oldBlocked) : null;
+
+  await db.pool.query(
+    `INSERT INTO auth_throttles (key_hash, scope, failure_count, window_started_at, blocked_until, updated_at)
+     VALUES ($1,$2,$3,$4,$5,NOW())
+     ON CONFLICT (key_hash) DO UPDATE SET
+       scope=EXCLUDED.scope,
+       failure_count=EXCLUDED.failure_count,
+       window_started_at=EXCLUDED.window_started_at,
+       blocked_until=EXCLUDED.blocked_until,
+       updated_at=NOW()`,
+    [rule.key, rule.scope, failureCount, windowStartedAt, blockedUntil],
+  );
+}
+
+async function securityEvent(db: Db, eventType: string, identifierHash: string, ipHash: string, details: Record<string, unknown>) {
+  await db.pool.query(
+    "INSERT INTO security_events (event_type, identifier_hash, ip_hash, details) VALUES ($1,$2,$3,$4::jsonb)",
+    [eventType, identifierHash, ipHash, JSON.stringify(details)],
+  ).catch(() => undefined);
+}
+
+export async function POST(request: Request) {
+  try {
+    const contentLength = Number(request.headers.get("content-length") || 0);
+    if (contentLength > MAX_BODY_BYTES) {
+      return Response.json({ error: "So‘rov hajmi juda katta." }, { status: 413, headers: { "cache-control": "no-store" } });
+    }
+
+    const rawBody = await request.text();
+    if (Buffer.byteLength(rawBody, "utf8") > MAX_BODY_BYTES) {
+      return Response.json({ error: "So‘rov hajmi juda katta." }, { status: 413, headers: { "cache-control": "no-store" } });
+    }
+
+    let body: { username?: string; password?: string };
+    try {
+      body = JSON.parse(rawBody || "{}") as { username?: string; password?: string };
+    } catch {
+      return Response.json({ error: "So‘rov formati noto‘g‘ri." }, { status: 400, headers: { "cache-control": "no-store" } });
+    }
+
+    const username = String(body.username || "").trim().toLowerCase().slice(0, 128);
+    const password = String(body.password || "").slice(0, 256);
+    if (!username || !password) {
+      return Response.json({ error: "Login va parolni kiriting." }, { status: 400, headers: { "cache-control": "no-store" } });
+    }
+
+    const db = getKpiDatabase();
+    const ip = clientIp(request);
+    const identifierHash = privacyDigest("account:" + username);
+    const ipHash = privacyDigest("ip:" + ip);
+    const pairHash = privacyDigest("pair:" + username + "|" + ip);
+    const rules: Rule[] = [
+      { key: pairHash, scope: "account_ip", limit: 6, windowMinutes: 15, blockMinutes: 15 },
+      { key: ipHash, scope: "ip", limit: 25, windowMinutes: 15, blockMinutes: 30 },
+      { key: identifierHash, scope: "account", limit: 30, windowMinutes: 30, blockMinutes: 30 },
+    ];
+
+    const retryValues = await Promise.all(rules.map((rule) => blockedSeconds(db, rule)));
+    const retryAfter = Math.max(0, ...retryValues);
+    if (retryAfter > 0) {
+      await securityEvent(db, "login_rate_limited", identifierHash, ipHash, { retryAfter });
+      return Response.json(
+        { error: "Juda ko‘p kirish urinishlari. Birozdan keyin qayta urinib ko‘ring." },
+        { status: 429, headers: { "retry-after": String(retryAfter), "cache-control": "no-store" } },
+      );
+    }
+
+    const { rows } = await db.pool.query(
+      "SELECT email, name, role, commission, active, password_hash FROM users WHERE email=$1 LIMIT 1",
+      [username],
+    );
+    const user = rows[0] as { email: string; name: string; role: string; commission: string; active: number; password_hash: string } | undefined;
+    const passwordOk = verifyPassword(password, user?.password_hash || DUMMY_HASH);
+    const valid = Boolean(user && user.active && passwordOk);
+
+    if (!valid) {
+      await Promise.all(rules.map((rule) => recordFailure(db, rule)));
+      await securityEvent(db, "login_failed", identifierHash, ipHash, { reason: "invalid_credentials" });
+      return Response.json({ error: "Login yoki parol noto‘g‘ri." }, { status: 401, headers: { "cache-control": "no-store" } });
+    }
+
+    const rawToken = randomBytes(32).toString("base64url");
+    const tokenHash = sessionDigest(rawToken);
+    const userAgentHash = privacyDigest((request.headers.get("user-agent") || "unknown").slice(0, 512));
+
+    await db.pool.query("DELETE FROM sessions WHERE expires_at <= NOW() OR last_seen_at <= NOW() - INTERVAL '2 hours'");
+    await db.pool.query(
+      `INSERT INTO sessions (token, user_email, expires_at, last_seen_at, ip_hash, user_agent_hash)
+       VALUES ($1,$2,NOW() + INTERVAL '12 hours',NOW(),$3,$4)`,
+      [tokenHash, user!.email, ipHash, userAgentHash],
+    );
+    await db.pool.query(
+      `DELETE FROM sessions
+        WHERE token IN (
+          SELECT token FROM sessions WHERE user_email=$1 ORDER BY created_at DESC OFFSET 5
+        )`,
+      [user!.email],
+    );
+    await db.pool.query("DELETE FROM auth_throttles WHERE key_hash=$1 OR key_hash=$2", [pairHash, identifierHash]);
+    await db.pool.query("DELETE FROM auth_throttles WHERE updated_at < NOW() - INTERVAL '2 days'").catch(() => undefined);
+    await db.pool.query("DELETE FROM security_events WHERE created_at < NOW() - INTERVAL '90 days'").catch(() => undefined);
+    await db.pool.query(
+      "INSERT INTO audit_logs (actor_email, action, target_type, target_id, details) VALUES ($1,'login','user',$2,'Tizimga xavfsiz kirish')",
+      [user!.email, user!.email],
+    );
+
+    const destination = user!.role === "admin"
+      ? "/admin"
+      : user!.role === "monitor"
+        ? "/monitoring"
+        : user!.role === "institution"
+          ? "/institution"
+          : "/evaluator";
+
+    const headers = new Headers({
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store, max-age=0",
+      "pragma": "no-cache",
+    });
+    if (process.env.NODE_ENV === "production") {
+      headers.append("set-cookie", `__Host-kpi_session=${encodeURIComponent(rawToken)}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=43200; Priority=High`);
+      headers.append("set-cookie", "kpi_session=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0");
+    } else {
+      headers.append("set-cookie", `kpi_session=${encodeURIComponent(rawToken)}; HttpOnly; SameSite=Strict; Path=/; Max-Age=43200`);
+    }
+
+    return new Response(JSON.stringify({ ok: true, destination }), { status: 200, headers });
+  } catch (error) {
+    console.error("login failed unexpectedly", error);
+    return Response.json(
+      { error: "Kirish vaqtida server xatoligi yuz berdi." },
+      { status: 500, headers: { "cache-control": "no-store" } },
+    );
+  }
+}
