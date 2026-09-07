@@ -12,6 +12,40 @@ export async function GET(request: Request) {
     const db = getKpiDatabase();
     const url = new URL(request.url);
     const institutionId = String(url.searchParams.get("institutionId") || "").trim();
+    const mode = String(url.searchParams.get("mode") || "").trim();
+    const requestedRound = Number(url.searchParams.get("roundDay") || 0);
+    const roundDay = Number.isFinite(requestedRound) && requestedRound > 0 ? requestedRound : null;
+
+    if (mode === "counts") {
+      const allowedCriterionIds = criteria
+        .filter((item) => item.commission === session.commission)
+        .map((item) => String(item.id));
+
+      const result = await db.pool.query(
+        `SELECT i.id AS "institutionId",
+                COUNT(a.id)::int AS "fileCount"
+           FROM institutions i
+           LEFT JOIN attachments a
+             ON a.institution_id = i.id
+            AND a.source IN ('institution_submission', 'institution_order')
+            AND (
+              a.source = 'institution_order'
+              OR (
+                a.source = 'institution_submission'
+                AND a.criterion_id = ANY($1::text[])
+                AND ($2::int IS NULL OR a.round_day = $2)
+              )
+            )
+          WHERE i.active = 1
+          GROUP BY i.id`,
+        [allowedCriterionIds, roundDay],
+      );
+
+      const counts = Object.fromEntries(
+        result.rows.map((row) => [String(row.institutionId), Number(row.fileCount || 0)]),
+      );
+      return Response.json({ counts }, { headers: { "cache-control": "no-store" } });
+    }
 
     if (!institutionId) {
       const result = await db.pool.query(
