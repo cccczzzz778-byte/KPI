@@ -1,0 +1,10 @@
+/* PATCH15_INSTITUTION_UPLOAD_HISTORY */
+.evaluator-ref-history-autocomplete{position:relative;min-width:0}
+.evaluator-ref-history-suggestions{position:absolute;left:0;right:0;top:44px;z-index:30;max-height:280px;overflow:auto;border:1px solid #d7e3e9;border-radius:10px;background:#fff;box-shadow:0 12px 30px rgba(42,72,96,.16);padding:5px}
+.evaluator-ref-history-suggestions button{width:100%;display:flex;align-items:center;gap:8px;border:0;border-radius:7px;background:transparent;padding:9px 10px;text-align:left;color:#425a73;cursor:pointer;font-size:12px}
+.evaluator-ref-history-suggestions button:hover{background:#eef8fb;color:#058aa8}
+.evaluator-ref-history-suggestions button span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.evaluator-ref-history-suggestions>div{padding:10px;color:#7c8da1;font-size:12px;text-align:center}
+.institution-history-table-wrap{max-height:360px;overflow:auto}
+.institution-history-table th{position:sticky;top:0;z-index:1;background:var(--background)}
+@media(max-width:900px){.evaluator-ref-history-picker-v2{grid-template-columns:1fr auto}.evaluator-ref-history-autocomplete{grid-column:1/-1}}
