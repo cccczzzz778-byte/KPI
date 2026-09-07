@@ -13,12 +13,12 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const institutionId = String(url.searchParams.get("institutionId") || "").trim();
     const mode = String(url.searchParams.get("mode") || "").trim();
+    const sessionCommission = String(session.commission || "").trim();
+    const allowedCriterionIds = criteria
+      .filter((item) => String(item.commission || "").trim() === sessionCommission)
+      .map((item) => String(item.id));
 
     if (mode === "counts") {
-      const allowedCriterionIds = criteria
-        .filter((item) => item.commission === session.commission)
-        .map((item) => String(item.id));
-
       const result = await db.pool.query(
         `SELECT i.id AS "institutionId",
                 COUNT(a.id)::int AS "fileCount"
@@ -26,7 +26,7 @@ export async function GET(request: Request) {
            LEFT JOIN attachments a
              ON a.institution_id = i.id
             AND a.source = 'institution_submission'
-            AND a.criterion_id = ANY($1::text[])
+            AND a.criterion_id::text = ANY($1::text[])
           WHERE i.active = 1
           GROUP BY i.id`,
         [allowedCriterionIds],
@@ -44,8 +44,12 @@ export async function GET(request: Request) {
            FROM institutions i
            JOIN attachments a ON a.institution_id = i.id
           WHERE i.active = 1
-            AND a.source IN ('institution_submission', 'institution_order')
+            AND (
+              a.source = 'institution_order'
+              OR (a.source = 'institution_submission' AND a.criterion_id::text = ANY($1::text[]))
+            )
           ORDER BY i.name ASC`,
+        [allowedCriterionIds],
       );
       return Response.json({ institutions: result.rows }, { headers: { "cache-control": "no-store" } });
     }
@@ -73,18 +77,21 @@ export async function GET(request: Request) {
          JOIN institutions i ON i.id = a.institution_id
         WHERE a.institution_id = $1
           AND i.active = 1
-          AND a.source IN ('institution_submission', 'institution_order')
+          AND (
+            a.source = 'institution_order'
+            OR (a.source = 'institution_submission' AND a.criterion_id::text = ANY($2::text[]))
+          )
         ORDER BY a.created_at DESC
         LIMIT 5000`,
-      [institutionId],
+      [institutionId, allowedCriterionIds],
     );
 
     const items = result.rows.flatMap((row) => {
       if (row.source === "institution_order") {
         return [{ ...row, criterionTitle: "BUYRUQ (chora-tadbir)", sourceLabel: "BUYRUQ" }];
       }
-      const criterion = criteria.find((item) => item.id === row.criterionId);
-      if (!criterion || criterion.commission !== session.commission) return [];
+      const criterion = criteria.find((item) => String(item.id) === String(row.criterionId));
+      if (!criterion || String(criterion.commission || "").trim() !== sessionCommission) return [];
       return [{ ...row, criterionTitle: criterion.title, sourceLabel: "Muassasa mezon fayli" }];
     });
 
