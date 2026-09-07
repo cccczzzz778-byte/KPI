@@ -1,0 +1,160 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ExternalLink, FileText, RefreshCw, RotateCcw, Search, Trash2 } from "lucide-react";
+
+type SubmissionItem = {
+  id: string;
+  criterionId: string;
+  criterionTitle: string;
+  roundDay: number | null;
+  filename: string;
+  contentType: string;
+  sizeBytes: number;
+  source: string;
+  submissionDate?: string;
+  createdAt?: string;
+};
+
+function formatBytes(bytes: number) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "—";
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatDate(item: SubmissionItem) {
+  if (item.submissionDate) return item.submissionDate;
+  if (!item.createdAt) return "—";
+  const date = new Date(item.createdAt);
+  return Number.isNaN(date.getTime()) ? item.createdAt : date.toLocaleDateString("uz-UZ");
+}
+
+export function InstitutionSubmissionManager() {
+  const [items, setItems] = useState<SubmissionItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [deletingId, setDeletingId] = useState("");
+  const [query, setQuery] = useState("");
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const response = await fetch("/api/institution/submissions", { cache: "no-store" });
+      const payload = await response.json() as { items?: SubmissionItem[]; error?: string };
+      if (!response.ok) throw new Error(payload.error || "Mezon fayllarini yuklab bo‘lmadi.");
+      setItems(Array.isArray(payload.items) ? payload.items : []);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Mezon fayllarini yuklashda xatolik yuz berdi.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const filtered = useMemo(() => {
+    const value = query.trim().toLocaleLowerCase("uz");
+    if (!value) return items;
+    return items.filter((item) =>
+      item.criterionTitle.toLocaleLowerCase("uz").includes(value) ||
+      item.filename.toLocaleLowerCase("uz").includes(value),
+    );
+  }, [items, query]);
+
+  async function remove(item: SubmissionItem) {
+    const ok = window.confirm(
+      `“${item.criterionTitle}” mezoniga yuklangan “${item.filename}” fayli o‘chirilsinmi?\n\nO‘chirgandan keyin shu mezonga yangi faylni qayta yuklashingiz mumkin.`,
+    );
+    if (!ok) return;
+
+    setDeletingId(item.id);
+    setError("");
+    try {
+      const response = await fetch(`/api/institution/submissions?id=${encodeURIComponent(item.id)}`, {
+        method: "DELETE",
+        cache: "no-store",
+      });
+      const payload = await response.json() as { error?: string; message?: string };
+      if (!response.ok) throw new Error(payload.error || "Faylni o‘chirib bo‘lmadi.");
+      setItems((current) => current.filter((row) => row.id !== item.id));
+      window.alert(payload.message || "Fayl o‘chirildi. Endi shu mezonga yangi fayl yuklashingiz mumkin.");
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Faylni o‘chirishda xatolik yuz berdi.");
+    } finally {
+      setDeletingId("");
+    }
+  }
+
+  return (
+    <section className="criterion-file-manager">
+      <div className="criterion-file-manager__head">
+        <div className="criterion-file-manager__intro">
+          <div className="criterion-file-manager__title-icon"><RotateCcw size={24} /></div>
+          <div>
+            <h2>Mezon bo‘yicha yuklangan fayllarni boshqarish</h2>
+            <p>Har bir mezonga yuklangan hujjatni ko‘rish, noto‘g‘ri faylni o‘chirish va keyin qayta yuklash mumkin.</p>
+          </div>
+        </div>
+        <div className="criterion-file-manager__total"><FileText size={18} /> Jami yuklangan fayllar: <strong>{items.length} ta</strong></div>
+      </div>
+
+      <div className="criterion-file-manager__toolbar">
+        <label className="criterion-file-manager__search">
+          <Search size={17} />
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Mezon yoki fayl nomi bo‘yicha qidirish"
+            aria-label="Mezon fayllarini qidirish"
+          />
+        </label>
+        <button type="button" className="criterion-file-manager__refresh" onClick={() => void load()} disabled={loading}>
+          <RefreshCw size={16} className={loading ? "spin" : ""} /> Yangilash
+        </button>
+      </div>
+
+      {error ? <div className="criterion-file-manager__error">{error}</div> : null}
+
+      {loading ? (
+        <div className="criterion-file-manager__state">Mezon fayllari yuklanmoqda...</div>
+      ) : filtered.length === 0 ? (
+        <div className="criterion-file-manager__state">Hozircha mezon bo‘yicha yuklangan fayl topilmadi.</div>
+      ) : (
+        <div className="criterion-file-manager__list">
+          {filtered.map((item) => (
+            <article className="criterion-file-manager__row" key={item.id}>
+              <div className="criterion-file-manager__file-icon"><FileText size={22} /></div>
+
+              <div className="criterion-file-manager__info">
+                <strong>{item.criterionTitle}</strong>
+                <div className="criterion-file-manager__meta">
+                  <span className="criterion-file-manager__filename">{item.filename}</span>
+                  <i>•</i><span>{formatDate(item)}</span>
+                  <i>•</i><span>{formatBytes(Number(item.sizeBytes))}</span>
+                  {item.roundDay ? <><i>•</i><span>{item.roundDay}-kunlik</span></> : null}
+                </div>
+              </div>
+
+              <div className="criterion-file-manager__actions">
+                <a href={`/api/files?id=${encodeURIComponent(item.id)}`} target="_blank" rel="noreferrer">
+                  <ExternalLink size={16} /> Ochish
+                </a>
+                <button
+                  type="button"
+                  className="criterion-file-manager__delete"
+                  disabled={deletingId === item.id}
+                  onClick={() => void remove(item)}
+                >
+                  <Trash2 size={16} /> {deletingId === item.id ? "O‘chirilmoqda..." : "O‘chirish va qayta yuklash"}
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
