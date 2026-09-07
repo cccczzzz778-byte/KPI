@@ -33,15 +33,25 @@ export async function GET(request: Request) {
     const sessionCommissionKey = commissionKey(sessionCommission);
 
     if (mode === "counts") {
+      const allowedCriterionIds = sessionCommissionKey
+        ? criteria
+            .filter((item) => commissionKey(item.commission) === sessionCommissionKey)
+            .map((item) => String(item.id).trim())
+            .filter(Boolean)
+        : [];
+
       const result = await db.pool.query(
         `SELECT i.id AS "institutionId",
-                COUNT(a.id)::int AS "fileCount"
+                COUNT(DISTINCT a.criterion_id::text)::int AS "fileCount"
            FROM institutions i
            LEFT JOIN attachments a
              ON a.institution_id = i.id
             AND a.source IN ('institution', 'institution_submission')
+            AND a.criterion_id IS NOT NULL
+            AND TRIM(a.criterion_id::text) = ANY($1::text[])
           WHERE i.active = 1
           GROUP BY i.id`,
+        [allowedCriterionIds],
       );
 
       const counts = Object.fromEntries(
