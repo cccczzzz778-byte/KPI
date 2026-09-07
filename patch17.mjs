@@ -18,7 +18,7 @@ if (institutionText !== institutionOriginal) {
   console.log('PATCH17: institution file history was already absent.');
 }
 
-// Show real uploaded-file counts directly in each evaluator institution row.
+// Show only criterion-upload counts directly in each evaluator institution row.
 const evaluatorPath = path.join(process.cwd(), 'components/evaluator-reference-panel.tsx');
 if (!fs.existsSync(evaluatorPath)) {
   throw new Error('PATCH17: components/evaluator-reference-panel.tsx not found.');
@@ -31,7 +31,7 @@ if (!evaluator.includes('evaluator-ref-file-count')) {
     throw new Error('PATCH17: evaluator evaluations anchor not found.');
   }
 
-  const fileCountLogic = `${evaluationsAnchor}\n  const [fileCounts, setFileCounts] = useState<Record<string, number>>({});\n\n  useEffect(() => {\n    const controller = new AbortController();\n    fetch(\`/api/evaluator/archive?mode=counts&roundDay=\${encodeURIComponent(String(roundDay))}\`, {\n      cache: \"no-store\",\n      signal: controller.signal,\n    })\n      .then(async (response) => {\n        const payload = await response.json() as { counts?: Record<string, number> };\n        if (!response.ok) throw new Error(\"Fayllar sonini yuklab bo‘lmadi.\");\n        return payload.counts || {};\n      })\n      .then((counts) => { if (!controller.signal.aborted) setFileCounts(counts); })\n      .catch(() => { if (!controller.signal.aborted) setFileCounts({}); });\n    return () => controller.abort();\n  }, [roundDay, session.commission]);`;
+  const fileCountLogic = `${evaluationsAnchor}\n  const [fileCounts, setFileCounts] = useState<Record<string, number>>({});\n\n  useEffect(() => {\n    const controller = new AbortController();\n    fetch(\`/api/evaluator/archive?mode=counts&roundDay=\${encodeURIComponent(String(roundDay))}\`, {\n      cache: \"no-store\",\n      signal: controller.signal,\n    })\n      .then(async (response) => {\n        const payload = await response.json() as { counts?: Record<string, number> };\n        if (!response.ok) throw new Error(\"Mezon fayllari sonini yuklab bo‘lmadi.\");\n        return payload.counts || {};\n      })\n      .then((counts) => { if (!controller.signal.aborted) setFileCounts(counts); })\n      .catch(() => { if (!controller.signal.aborted) setFileCounts({}); });\n    return () => controller.abort();\n  }, [roundDay, session.commission]);`;
   evaluator = evaluator.replace(evaluationsAnchor, fileCountLogic);
 
   const statusAnchor = '            <div className="evaluator-ref-status">';
@@ -40,13 +40,15 @@ if (!evaluator.includes('evaluator-ref-file-count')) {
   }
   evaluator = evaluator.replace(
     statusAnchor,
-    `            <div className="evaluator-ref-file-count"><FileText size={18} /><span><small>Yuklangan fayllar</small><strong>{fileCounts[String(institution.id)] ?? 0} ta</strong></span></div>\n${statusAnchor}`,
+    `            <div className="evaluator-ref-file-count"><FileText size={18} /><span><small>Mezon fayllari</small><strong>{fileCounts[String(institution.id)] ?? 0} ta</strong></span></div>\n${statusAnchor}`,
   );
 
   fs.writeFileSync(evaluatorPath, evaluator, 'utf8');
-  console.log('PATCH17: evaluator institution rows now show uploaded file counts.');
+  console.log('PATCH17: evaluator institution rows now show criterion-file counts only.');
 } else {
-  console.log('PATCH17: evaluator file count UI already present.');
+  evaluator = evaluator.replaceAll('Yuklangan fayllar', 'Mezon fayllari');
+  fs.writeFileSync(evaluatorPath, evaluator, 'utf8');
+  console.log('PATCH17: evaluator criterion-file count UI already present and label refreshed.');
 }
 
 const cssPath = path.join(process.cwd(), 'app/globals.css');
@@ -55,5 +57,5 @@ const cssMarker = '/* PATCH17_EVALUATOR_FILE_COUNTS */';
 if (!css.includes(cssMarker)) {
   css += `\n\n${cssMarker}\n.evaluator-ref-institution{grid-template-columns:48px minmax(230px,1.7fr) 80px minmax(160px,.75fr) 150px minmax(165px,.8fr) 150px}\n.evaluator-ref-file-count{min-height:46px;display:flex;align-items:center;gap:9px;padding:7px 11px;border:1px solid #dbeaf2;border-radius:10px;background:linear-gradient(135deg,#f4faff 0%,#eaf5ff 100%);color:#1577c8}\n.evaluator-ref-file-count>svg{flex:0 0 auto;color:#1679cf}\n.evaluator-ref-file-count>span{display:flex;flex-direction:column;gap:1px;min-width:0}\n.evaluator-ref-file-count small{font-size:9px;line-height:1.15;color:#7890aa;white-space:nowrap}\n.evaluator-ref-file-count strong{font-size:14px;line-height:1.2;color:#203f61}\n@media(max-width:1180px){.evaluator-ref-institution{grid-template-columns:44px minmax(200px,1.5fr) 70px minmax(140px,.75fr) 135px 140px}.evaluator-ref-file-count{min-height:42px;padding:6px 9px}}\n@media(max-width:900px){.evaluator-ref-file-count{grid-column:auto;min-width:118px}.evaluator-ref-file-count small{font-size:8px}.evaluator-ref-file-count strong{font-size:13px}}\n@media(max-width:580px){.evaluator-ref-file-count{min-width:106px;padding:6px 8px}.evaluator-ref-file-count>svg{width:16px;height:16px}}\n`;
   fs.writeFileSync(cssPath, css, 'utf8');
-  console.log('PATCH17: evaluator file count styling added.');
+  console.log('PATCH17: evaluator criterion-file count styling added.');
 }
