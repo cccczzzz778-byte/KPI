@@ -1,0 +1,148 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ExternalLink, FileText, RefreshCw, RotateCcw, Trash2 } from "lucide-react";
+
+type SubmissionItem = {
+  id: string;
+  criterionId: string;
+  criterionTitle: string;
+  roundDay: number | null;
+  filename: string;
+  contentType: string;
+  sizeBytes: number;
+  source: string;
+  submissionDate?: string;
+  createdAt?: string;
+};
+
+function formatBytes(bytes: number) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "—";
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatDate(item: SubmissionItem) {
+  if (item.submissionDate) return item.submissionDate;
+  if (!item.createdAt) return "—";
+  const date = new Date(item.createdAt);
+  return Number.isNaN(date.getTime()) ? item.createdAt : date.toLocaleString("uz-UZ");
+}
+
+export function InstitutionSubmissionManager() {
+  const [items, setItems] = useState<SubmissionItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [deletingId, setDeletingId] = useState("");
+  const [query, setQuery] = useState("");
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const response = await fetch("/api/institution/submissions", { cache: "no-store" });
+      const payload = await response.json() as { items?: SubmissionItem[]; error?: string };
+      if (!response.ok) throw new Error(payload.error || "Mezon fayllarini yuklab bo‘lmadi.");
+      setItems(Array.isArray(payload.items) ? payload.items : []);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Mezon fayllarini yuklashda xatolik yuz berdi.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const filtered = useMemo(() => {
+    const value = query.trim().toLocaleLowerCase("uz");
+    if (!value) return items;
+    return items.filter((item) =>
+      item.criterionTitle.toLocaleLowerCase("uz").includes(value) ||
+      item.filename.toLocaleLowerCase("uz").includes(value) ||
+      formatDate(item).toLocaleLowerCase("uz").includes(value),
+    );
+  }, [items, query]);
+
+  async function remove(item: SubmissionItem) {
+    const ok = window.confirm(
+      `“${item.criterionTitle}” mezoniga yuklangan “${item.filename}” fayli o‘chirilsinmi?\n\nO‘chirgandan keyin shu mezonga yangi faylni qayta yuklashingiz mumkin.`,
+    );
+    if (!ok) return;
+
+    setDeletingId(item.id);
+    setError("");
+    try {
+      const response = await fetch(`/api/institution/submissions?id=${encodeURIComponent(item.id)}`, {
+        method: "DELETE",
+        cache: "no-store",
+      });
+      const payload = await response.json() as { error?: string; message?: string };
+      if (!response.ok) throw new Error(payload.error || "Faylni o‘chirib bo‘lmadi.");
+      setItems((current) => current.filter((row) => row.id !== item.id));
+      window.alert(payload.message || "Fayl o‘chirildi. Endi mezonni qayta yuklashingiz mumkin.");
+      window.location.reload();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Faylni o‘chirishda xatolik yuz berdi.");
+      setDeletingId("");
+    }
+  }
+
+  return (
+    <section className="responsible-card institution-submission-manager">
+      <div className="institution-submission-head">
+        <div>
+          <div className="institution-submission-title"><RotateCcw size={20} /> Mezon fayllarini boshqarish</div>
+          <p>Noto‘g‘ri yuklangan mezon faylini o‘chirib, pastdagi yuklash bo‘limidan shu mezonga yangi faylni qayta yuklashingiz mumkin.</p>
+        </div>
+        <button type="button" className="institution-submission-refresh" onClick={() => void load()} disabled={loading}>
+          <RefreshCw size={16} className={loading ? "spin" : ""} /> Yangilash
+        </button>
+      </div>
+
+      <div className="institution-submission-toolbar">
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Mezon yoki fayl nomi bo‘yicha qidirish"
+          aria-label="Mezon fayllarini qidirish"
+        />
+        <span>{items.length} ta fayl</span>
+      </div>
+
+      {error ? <div className="institution-submission-error">{error}</div> : null}
+      {loading ? (
+        <div className="institution-submission-state">Mezon fayllari yuklanmoqda...</div>
+      ) : filtered.length === 0 ? (
+        <div className="institution-submission-state">Hozircha mezon bo‘yicha yuklangan fayl topilmadi.</div>
+      ) : (
+        <div className="institution-submission-list">
+          {filtered.map((item) => (
+            <div className="institution-submission-row" key={item.id}>
+              <div className="institution-submission-icon"><FileText size={20} /></div>
+              <div className="institution-submission-main">
+                <strong>{item.criterionTitle}</strong>
+                <span>{item.filename}</span>
+                <small>{formatDate(item)} · {formatBytes(Number(item.sizeBytes))}{item.roundDay ? ` · ${item.roundDay}-kunlik` : ""}</small>
+              </div>
+              <div className="institution-submission-actions">
+                <a href={`/api/files?id=${encodeURIComponent(item.id)}`} target="_blank" rel="noreferrer">
+                  <ExternalLink size={15} /> Ochish
+                </a>
+                <button
+                  type="button"
+                  className="institution-submission-delete"
+                  disabled={deletingId === item.id}
+                  onClick={() => void remove(item)}
+                >
+                  <Trash2 size={15} /> {deletingId === item.id ? "O‘chirilmoqda..." : "O‘chirish va qayta yuklash"}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
