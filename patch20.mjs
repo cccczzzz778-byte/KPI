@@ -18,10 +18,22 @@ function patchFile(relative, patcher) {
   console.log(`PATCH20: patched ${relative}`);
 }
 
+function patchFileAllowNoop(relative, patcher) {
+  const target = path.join(process.cwd(), relative);
+  const original = fs.readFileSync(target, 'utf8');
+  const updated = patcher(original);
+  if (updated === original) {
+    console.log(`PATCH20: ${relative} already compatible`);
+    return;
+  }
+  fs.writeFileSync(target, updated, 'utf8');
+  console.log(`PATCH20: patched ${relative}`);
+}
+
 copyTemplate('patch20.institution-submissions-route.ts.txt', 'app/api/institution/submissions/route.ts');
 copyTemplate('patch20.institution-submission-manager.tsx.txt', 'components/institution-submission-manager.tsx');
 
-patchFile('lib/r2.ts', (text) => {
+patchFileAllowNoop('lib/r2.ts', (text) => {
   let updated = text;
   if (!updated.includes('DeleteObjectCommand')) {
     const importPattern = /import\s*\{([\s\S]*?)\}\s*from\s*["']@aws-sdk\/client-s3["'];?/m;
