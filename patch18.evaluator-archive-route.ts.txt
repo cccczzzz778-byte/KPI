@@ -1,0 +1,111 @@
+import { criteria } from "@/lib/kpi-data";
+import { getKpiDatabase } from "@/lib/netlify-db";
+import { AccessError, accessErrorResponse, requireAppUser } from "@/lib/server-auth";
+
+export const runtime = "nodejs";
+
+function commissionKey(value: unknown) {
+  const raw = String(value || "").trim().toLocaleLowerCase("uz");
+  const normalized = raw
+    .replace(/[ʻʼ’‘`´']/g, "")
+    .replace(/[^a-z0-9а-яёқғҳў]+/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!normalized) return "";
+  if (normalized === "infra" || normalized.includes("raqam") || normalized.includes("digital") || normalized.includes("it infratuz")) return "digital";
+  if (normalized === "moliya" || normalized.includes("moliya") || normalized.includes("finance") || normalized.includes("xojal") || normalized.includes("xo jal")) return "finance";
+  if (normalized === "sifat" || normalized.includes("statsionar") || normalized.includes("stotsionar") || normalized.includes("stationar")) return "stationary";
+  if (normalized === "profil" || normalized.includes("birlamchi") || normalized.includes("primary")) return "primary";
+  if (normalized === "ijro" || normalized.includes("ijro") || normalized.includes("kadr") || normalized.includes("murojaat")) return "exec";
+  return normalized.replace(/\s+/g, "");
+}
+
+export async function GET(request: Request) {
+  try {
+    const session = await requireAppUser(request);
+    if (session.role !== "evaluator") throw new AccessError("Bu bo‘lim faqat baholovchi uchun.", 403);
+
+    const db = getKpiDatabase();
+    const url = new URL(request.url);
+    const institutionId = String(url.searchParams.get("institutionId") || "").trim();
+    const mode = String(url.searchParams.get("mode") || "").trim();
+    const sessionCommission = String(session.commission || "").trim();
+    const sessionCommissionKey = commissionKey(sessionCommission);
+    const allowedCriterionIds = criteria
+      .filter((item) => !sessionCommissionKey || commissionKey(item.commission) === sessionCommissionKey)
+      .map((item) => String(item.id));
+
+    if (mode === "counts") {
+      const result = await db.pool.query(
+        `SELECT i.id AS "institutionId",
+                COUNT(a.id)::int AS "fileCount"
+           FROM institutions i
+           LEFT JOIN attachments a
+             ON a.institution_id = i.id
+            AND a.source = 'institution_submission'
+          WHERE i.active = 1
+          GROUP BY i.id`,
+      );
+
+      const counts = Object.fromEntries(
+        result.rows.map((row) => [String(row.institutionId), Number(row.fileCount || 0)]),
+      );
+      return Response.json({ counts }, { headers: { "cache-control": "no-store" } });
+    }
+
+    if (!institutionId) {
+      const result = await db.pool.query(
+        `SELECT DISTINCT i.id, i.name
+           FROM institutions i
+           JOIN attachments a ON a.institution_id = i.id
+          WHERE i.active = 1
+            AND a.source IN ('institution_submission', 'institution_order')
+          ORDER BY i.name ASC`,
+      );
+      return Response.json({ institutions: result.rows }, { headers: { "cache-control": "no-store" } });
+    }
+
+    const institutionResult = await db.pool.query(
+      `SELECT id, name FROM institutions WHERE id=$1 AND active=1 LIMIT 1`,
+      [institutionId],
+    );
+    const institution = institutionResult.rows[0];
+    if (!institution) throw new AccessError("Muassasa topilmadi.", 404);
+
+    const result = await db.pool.query(
+      `SELECT a.id,
+              a.institution_id AS "institutionId",
+              i.name AS "institutionName",
+              a.criterion_id AS "criterionId",
+              a.round_day AS "roundDay",
+              a.filename,
+              a.content_type AS "contentType",
+              a.size_bytes AS "sizeBytes",
+              a.source,
+              TO_CHAR(a.submission_date, 'YYYY-MM-DD') AS "submissionDate",
+              a.created_at AS "createdAt"
+         FROM attachments a
+         JOIN institutions i ON i.id = a.institution_id
+        WHERE a.institution_id = $1
+          AND i.active = 1
+          AND a.source IN ('institution_submission', 'institution_order')
+        ORDER BY a.created_at DESC
+        LIMIT 5000`,
+      [institutionId],
+    );
+
+    const items = result.rows.flatMap((row) => {
+      if (row.source === "institution_order") {
+        return [{ ...row, criterionTitle: "BUYRUQ (chora-tadbir)", sourceLabel: "BUYRUQ" }];
+      }
+      const criterion = criteria.find((item) => String(item.id) === String(row.criterionId));
+      if (!criterion) return [];
+      if (sessionCommissionKey && commissionKey(criterion.commission) !== sessionCommissionKey) return [];
+      return [{ ...row, criterionTitle: criterion.title, sourceLabel: "Muassasa mezon fayli" }];
+    });
+
+    return Response.json({ institution, items }, { headers: { "cache-control": "no-store" } });
+  } catch (error) {
+    return accessErrorResponse(error);
+  }
+}
