@@ -21,6 +21,11 @@ const oldBlock = `  useEffect(() => {
     return () => controller.abort();
   }, [roundDay, session.commission]);`;
 
+const uploadedCriterionOldBlock = oldBlock.replace(
+  'Mezon fayllari sonini yuklab bo‘lmadi.',
+  'Yuklangan mezonlar sonini yuklab bo‘lmadi.',
+);
+
 const newBlock = `  useEffect(() => {
     let active = true;
 
@@ -30,7 +35,7 @@ const newBlock = `  useEffect(() => {
           cache: "no-store",
         });
         const payload = await response.json() as { counts?: Record<string, number> };
-        if (!response.ok) throw new Error("Mezon fayllari sonini yuklab bo‘lmadi.");
+        if (!response.ok) throw new Error("Yuklangan mezonlar sonini yuklab bo‘lmadi.");
         if (active) setFileCounts(payload.counts || {});
       } catch {
         // Old values are kept on a temporary network error so visible counts do not jump to zero.
@@ -52,7 +57,12 @@ const newBlock = `  useEffect(() => {
     };
   }, [roundDay, session.commission]);`;
 
-if (!text.includes(oldBlock)) throw new Error('PATCH19: old evaluator count effect not found.');
-text = text.replace(oldBlock, newBlock);
+const matchedOldBlock = [oldBlock, uploadedCriterionOldBlock].find((block) => text.includes(block));
+if (matchedOldBlock) {
+  text = text.replace(matchedOldBlock, newBlock);
+} else if (!text.includes('const loadFileCounts = async () =>')) {
+  throw new Error('PATCH19: evaluator count effect not found.');
+}
+
 fs.writeFileSync(evaluatorPath, text, 'utf8');
-console.log('PATCH19: evaluator criterion-file counts now refresh every 5 seconds and on focus.');
+console.log('PATCH19: evaluator uploaded-criterion counts refresh every 5 seconds and on focus.');
