@@ -13,8 +13,6 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const institutionId = String(url.searchParams.get("institutionId") || "").trim();
     const mode = String(url.searchParams.get("mode") || "").trim();
-    const requestedRound = Number(url.searchParams.get("roundDay") || 0);
-    const roundDay = Number.isFinite(requestedRound) && requestedRound > 0 ? requestedRound : null;
 
     if (mode === "counts") {
       const allowedCriterionIds = criteria
@@ -29,10 +27,9 @@ export async function GET(request: Request) {
              ON a.institution_id = i.id
             AND a.source = 'institution_submission'
             AND a.criterion_id = ANY($1::text[])
-            AND ($2::int IS NULL OR a.round_day = $2)
           WHERE i.active = 1
           GROUP BY i.id`,
-        [allowedCriterionIds, roundDay],
+        [allowedCriterionIds],
       );
 
       const counts = Object.fromEntries(
