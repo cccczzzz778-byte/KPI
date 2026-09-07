@@ -1,0 +1,226 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import {
+  ArrowRight,
+  Building2,
+  CalendarDays,
+  CheckCircle2,
+  ClipboardCheck,
+  Download,
+  Eye,
+  FileText,
+  FolderOpen,
+  RefreshCw,
+  Search,
+  UploadCloud,
+} from "lucide-react";
+import { criteria as allCriteria } from "@/lib/kpi-data";
+import { FilePreviewModal } from "@/components/file-preview-modal";
+
+type AnyRecord = Record<string, any>;
+
+type ArchiveItem = {
+  id: string;
+  institutionId: string;
+  institutionName: string;
+  criterionId: string;
+  criterionTitle: string;
+  roundDay: number | null;
+  filename: string;
+  contentType?: string;
+  sizeBytes: number;
+  source: string;
+  sourceLabel: string;
+  submissionDate?: string;
+  createdAt?: string;
+};
+
+function cleanFilename(value: string) {
+  return String(value || "Fayl").replace(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}-/i, "");
+}
+
+function formatBytes(bytes: number) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "—";
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatDate(item: ArchiveItem) {
+  const raw = item.createdAt || item.submissionDate || "";
+  if (!raw) return "—";
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) return raw;
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  const hh = String(date.getHours()).padStart(2, "0");
+  const mm = String(date.getMinutes()).padStart(2, "0");
+  return `${y}-${m}-${d} ${hh}:${mm}`;
+}
+
+function normalizeDate(item: ArchiveItem) {
+  const raw = item.createdAt || item.submissionDate || "";
+  if (!raw) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) return "";
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function canPreview(item: ArchiveItem) {
+  const type = String(item.contentType || "").toLowerCase();
+  const name = String(item.filename || "").toLowerCase();
+  return type === "application/pdf" || type.startsWith("image/") || /\.(pdf|jpe?g|png|webp|gif)$/i.test(name);
+}
+
+function commissionLabel(value: string) {
+  const normalized = String(value || "").toLocaleLowerCase("uz");
+  if (normalized.includes("raqam") || normalized.includes("digital") || normalized.includes("it")) return "Raqamlashtirish va IT infratuzilmasi";
+  if (normalized.includes("moliya") || normalized.includes("xo‘jal") || normalized.includes("xojal")) return "Moliya-xo‘jalik va infratuzilma";
+  if (normalized.includes("statsionar") || normalized.includes("stotsionar")) return "Stotsionar xizmat";
+  if (normalized.includes("birlamchi")) return "Birlamchi xizmat";
+  if (normalized.includes("ijro") || normalized.includes("kadr")) return "Ijro-intizom, murojaatlar va kadrlar";
+  return value || "Baholash yo‘nalishi";
+}
+
+function shortDirection(value: string) {
+  const full = commissionLabel(value);
+  if (full.startsWith("Raqamlashtirish")) return "Raqamlashtirish";
+  if (full.startsWith("Moliya")) return "Moliya va infratuzilma";
+  if (full.startsWith("Stotsionar")) return "Stotsionar";
+  if (full.startsWith("Birlamchi")) return "Birlamchi";
+  if (full.startsWith("Ijro")) return "Ijro-intizom";
+  return full;
+}
+
+function ArchivePanel({ roundDay }: { roundDay: number }) {
+  const [items, setItems] = useState<ArchiveItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [query, setQuery] = useState("");
+  const [criterionId, setCriterionId] = useState("");
+  const [date, setDate] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
+  const [preview, setPreview] = useState<ArchiveItem | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    setError("");
+    fetch("/api/evaluator/archive", { cache: "no-store", signal: controller.signal })
+      .then(async (response) => {
+        const payload = await response.json() as { items?: ArchiveItem[]; error?: string };
+        if (!response.ok) throw new Error(payload.error || "Fayllar tarixini yuklab bo‘lmadi.");
+        return payload.items || [];
+      })
+      .then(setItems)
+      .catch((reason: unknown) => {
+        if (controller.signal.aborted) return;
+        setError(reason instanceof Error ? reason.message : "Fayllarni yuklashda xatolik.");
+      })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    return () => controller.abort();
+  }, [reloadKey]);
+
+  const criteria = useMemo(() => {
+    const map = new Map<string, string>();
+    items.forEach((item) => {
+      if (item.source !== "institution_order" && item.criterionId) map.set(item.criterionId, item.criterionTitle);
+    });
+    return [...map.entries()].map(([id, title]) => ({ id, title })).sort((a, b) => a.title.localeCompare(b.title, "uz"));
+  }, [items]);
+
+  const filtered = useMemo(() => {
+    const needle = query.trim().toLocaleLowerCase("uz");
+    return items.filter((item) => {
+      if (criterionId && item.criterionId !== criterionId) return false;
+      if (date && normalizeDate(item) !== date) return false;
+      if (!needle) return true;
+      return item.institutionName.toLocaleLowerCase("uz").includes(needle)
+        || item.criterionTitle.toLocaleLowerCase("uz").includes(needle)
+        || cleanFilename(item.filename).toLocaleLowerCase("uz").includes(needle)
+        || formatDate(item).includes(needle);
+    });
+  }, [items, query, criterionId, date]);
+
+  return <div className="evaluator-ref-archive">
+    <div className="evaluator-ref-section-head">
+      <div className="evaluator-ref-title-with-icon"><FolderOpen size={22} /><div><strong>Yuklangan fayllar tarixi</strong><span>Muassasalar tomonidan yuklangan fayllar va hujjatlar tarixi</span></div></div>
+      <span className="evaluator-ref-round">{roundDay}-kunlik nazorat</span>
+    </div>
+
+    <div className="evaluator-ref-stats">
+      <div className="is-blue"><FileText /><span>Jami fayl<strong>{items.length} <small>ta</small></strong></span></div>
+      <div className="is-green"><FileText /><span>Mezon fayli<strong>{items.filter((item) => item.source === "institution_submission").length} <small>ta</small></strong></span></div>
+      <div className="is-orange"><FileText /><span>BUYRUQ<strong>{items.filter((item) => item.source === "institution_order").length} <small>ta</small></strong></span></div>
+    </div>
+
+    <div className="evaluator-ref-filters">
+      <label className="evaluator-ref-search"><Search size={17} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Muassasa, mezon yoki fayl nomi..." /></label>
+      <select value={criterionId} onChange={(event) => setCriterionId(event.target.value)} aria-label="Mezon filtri"><option value="">Barcha mezonlar</option>{criteria.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select>
+      <label className="evaluator-ref-date"><CalendarDays size={17} /><input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label>
+      <button type="button" className="evaluator-ref-refresh" onClick={() => setReloadKey((value) => value + 1)} disabled={loading}><RefreshCw size={17} className={loading ? "animate-spin" : ""} /> Yangilash</button>
+    </div>
+
+    {loading ? <div className="evaluator-ref-state"><RefreshCw className="animate-spin" size={20} /> Fayllar yuklanmoqda...</div>
+      : error ? <div className="evaluator-ref-state is-error"><strong>Fayllar tarixi yuklanmadi</strong><span>{error}</span><button type="button" onClick={() => setReloadKey((value) => value + 1)}>Qayta urinish</button></div>
+      : filtered.length === 0 ? <div className="evaluator-ref-state">Tanlangan filtr bo‘yicha fayl topilmadi.</div>
+      : <>
+        <div className="evaluator-ref-table-wrap"><table className="evaluator-ref-table"><thead><tr><th>Sana</th><th>Mezon</th><th>Nazorat</th><th>Fayl</th><th>Hajm</th><th>Amal</th></tr></thead><tbody>{filtered.map((item) => <tr key={item.id}><td>{formatDate(item)}</td><td><strong>{item.criterionTitle}</strong><small>{item.institutionName}</small></td><td><span className={item.source === "institution_order" ? "evaluator-ref-chip is-order" : "evaluator-ref-chip"}>{item.roundDay ? `${item.roundDay}-kunlik` : item.source === "institution_order" ? "BUYRUQ" : "—"}</span></td><td><div className="evaluator-ref-file"><FileText size={17} />{cleanFilename(item.filename)}</div></td><td>{formatBytes(Number(item.sizeBytes))}</td><td><div className="evaluator-ref-actions">{canPreview(item) && <button type="button" onClick={() => setPreview(item)}><Eye size={16} /> Ko‘rish</button>}<a href={`/api/files?id=${encodeURIComponent(item.id)}`}><Download size={16} /> Yuklash</a></div></td></tr>)}</tbody></table></div>
+        <div className="evaluator-ref-mobile-files">{filtered.map((item) => <article key={item.id}><div><strong>{item.criterionTitle}</strong><span>{item.institutionName}</span></div><div className="evaluator-ref-file"><FileText size={16} />{cleanFilename(item.filename)}</div><small>{formatDate(item)} · {formatBytes(Number(item.sizeBytes))}</small><div className="evaluator-ref-actions">{canPreview(item) && <button type="button" onClick={() => setPreview(item)}><Eye size={16} /> Ko‘rish</button>}<a href={`/api/files?id=${encodeURIComponent(item.id)}`}><Download size={16} /> Yuklash</a></div></article>)}</div>
+      </>}
+    {preview && <FilePreviewModal file={preview as any} onClose={() => setPreview(null)} />}
+  </div>;
+}
+
+export function EvaluatorReferencePanel(props: AnyRecord) {
+  const data = props.data ?? props.dashboardData ?? props.dashboard ?? {};
+  const session = data.session ?? {};
+  const roundDay = Number(props.selectedRound ?? props.roundDay ?? props.round ?? 10) || 10;
+  const openEvaluation = props.onOpenEvaluation ?? props.openEvaluation ?? props.onEvaluate;
+  const refresh = props.onRefresh ?? props.refresh;
+  const direction = commissionLabel(String(session.commission || ""));
+  const criteria = useMemo(() => allCriteria.filter((item: AnyRecord) => !session.commission || item.commission === session.commission), [session.commission]);
+  const criterionIds = useMemo(() => new Set(criteria.map((item: AnyRecord) => String(item.id))), [criteria]);
+  const institutions = useMemo(() => (Array.isArray(data.institutions) ? data.institutions : []).filter((item: AnyRecord) => item.active !== false && item.active !== 0).slice().sort((a: AnyRecord, b: AnyRecord) => String(a.name).localeCompare(String(b.name), "uz")), [data.institutions]);
+  const evaluations = Array.isArray(data.evaluations) ? data.evaluations : [];
+
+  function institutionProgress(institutionId: string) {
+    const rows = evaluations.filter((item: AnyRecord) => String(item.institutionId) === String(institutionId)
+      && Number(item.roundDay ?? item.round ?? roundDay) === roundDay
+      && criterionIds.has(String(item.criterionId)));
+    const done = new Set(rows.map((item: AnyRecord) => String(item.criterionId))).size;
+    const total = criteria.length;
+    return { done, total, percent: total ? Math.min(100, Math.round((done / total) * 100)) : 0 };
+  }
+
+  return <div className="evaluator-reference-root">
+    <section className="evaluator-ref-banner">
+      <div><ClipboardCheck size={25} /><div><h2>Baholovchi ({direction})</h2><p>Faqat shu yo‘nalishdagi barcha baholash mezonlari ko‘rinadi <b>· 20 ball</b> <b>· Har bir mezon uchun majburiy izoh</b></p></div></div>
+      <div className="evaluator-ref-upload-limit"><UploadCloud size={23} /><span><strong>30 MB</strong><small>har bir fayl uchun</small></span></div>
+    </section>
+
+    <section className="evaluator-ref-main-card">
+      <div className="evaluator-ref-main-head"><div><ClipboardCheck size={21} /><strong>Baholash uchun muassasalar ({shortDirection(String(session.commission || ""))})</strong></div><div className="evaluator-ref-head-actions"><span>{roundDay}-kunlik nazorat</span>{typeof refresh === "function" && <button type="button" onClick={() => refresh()} title="Ma’lumotlarni yangilash"><RefreshCw size={16} /></button>}</div></div>
+      <ArchivePanel roundDay={roundDay} />
+
+      <div className="evaluator-ref-institutions">
+        {institutions.length === 0 ? <div className="evaluator-ref-state">Baholash uchun faol muassasa topilmadi.</div> : institutions.map((institution: AnyRecord) => {
+          const progress = institutionProgress(String(institution.id));
+          return <article className="evaluator-ref-institution" key={institution.id}>
+            <div className="evaluator-ref-building"><Building2 size={22} /></div>
+            <div className="evaluator-ref-inst-name"><strong>{institution.name}</strong><span>{institution.district || institution.type || "Tibbiyot muassasasi"}</span></div>
+            <div className="evaluator-ref-score"><strong>{progress.done} / {progress.total || criteria.length}</strong><span>Mezonlar</span></div>
+            <div className="evaluator-ref-progress"><div><span style={{ width: `${progress.percent}%` }} /></div><small>{progress.percent}%</small></div>
+            <div className="evaluator-ref-status">{progress.percent === 100 ? <CheckCircle2 size={18} /> : <CalendarDays size={18} />}<span><strong>{progress.percent === 100 ? "Baholash yakunlangan" : `${roundDay}-kunlik nazorat`}</strong><small>{progress.percent === 100 ? "Barcha mezonlar" : "Baholash jarayoni"}</small></span></div>
+            <button type="button" className="evaluator-ref-evaluate" onClick={() => { if (typeof openEvaluation === "function") openEvaluation(institution); }} disabled={typeof openEvaluation !== "function"}><ClipboardCheck size={17} /> Baholash <ArrowRight size={17} /></button>
+          </article>;
+        })}
+      </div>
+    </section>
+  </div>;
+}
