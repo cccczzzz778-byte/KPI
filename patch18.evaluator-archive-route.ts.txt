@@ -31,9 +31,6 @@ export async function GET(request: Request) {
     const mode = String(url.searchParams.get("mode") || "").trim();
     const sessionCommission = String(session.commission || "").trim();
     const sessionCommissionKey = commissionKey(sessionCommission);
-    const allowedCriterionIds = criteria
-      .filter((item) => !sessionCommissionKey || commissionKey(item.commission) === sessionCommissionKey)
-      .map((item) => String(item.id));
 
     if (mode === "counts") {
       const result = await db.pool.query(
@@ -42,7 +39,7 @@ export async function GET(request: Request) {
            FROM institutions i
            LEFT JOIN attachments a
              ON a.institution_id = i.id
-            AND a.source = 'institution_submission'
+            AND a.source IN ('institution', 'institution_submission')
           WHERE i.active = 1
           GROUP BY i.id`,
       );
@@ -59,7 +56,7 @@ export async function GET(request: Request) {
            FROM institutions i
            JOIN attachments a ON a.institution_id = i.id
           WHERE i.active = 1
-            AND a.source IN ('institution_submission', 'institution_order')
+            AND a.source IN ('institution', 'institution_submission', 'institution_order')
           ORDER BY i.name ASC`,
       );
       return Response.json({ institutions: result.rows }, { headers: { "cache-control": "no-store" } });
@@ -88,7 +85,7 @@ export async function GET(request: Request) {
          JOIN institutions i ON i.id = a.institution_id
         WHERE a.institution_id = $1
           AND i.active = 1
-          AND a.source IN ('institution_submission', 'institution_order')
+          AND a.source IN ('institution', 'institution_submission', 'institution_order')
         ORDER BY a.created_at DESC
         LIMIT 5000`,
       [institutionId],
