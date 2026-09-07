@@ -58,9 +58,11 @@ export async function GET(request: Request) {
     console.error("logout navigation failed unexpectedly", error);
   }
 
-  const destination = new URL("/login", request.url);
+  // IMPORTANT: keep redirect relative. On Railway request.url may contain the
+  // internal container host (localhost:8080), which would otherwise leak into
+  // the browser and cause ERR_CONNECTION_REFUSED after logout.
   const headers = new Headers({
-    location: destination.toString(),
+    location: "/login",
     "cache-control": "no-store, max-age=0",
     "pragma": "no-cache",
   });
