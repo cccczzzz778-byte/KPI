@@ -1,0 +1,304 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import {
+  BarChart3,
+  Building2,
+  CalendarDays,
+  CheckCircle2,
+  ChevronDown,
+  ClipboardCheck,
+  Download,
+  FileText,
+  HeartPulse,
+  Hospital,
+  Landmark,
+  LockKeyhole,
+  LogIn,
+  RefreshCw,
+  Search,
+  Settings,
+  Stethoscope,
+  Users,
+} from "lucide-react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { commissions, criteria, type CommissionKey } from "@/lib/kpi-data";
+
+const KEYS: CommissionKey[] = ["ijro", "birlamchi", "statsionar", "raqam", "moliya"];
+type PeriodMode = "daily" | "monthly" | "60d" | "directions";
+type Row = {
+  id: string;
+  name: string;
+  district: string;
+  type: string;
+  parts: Record<CommissionKey, number>;
+  total: number;
+  maxTotal: number;
+  evaluated: boolean;
+  assessedCount: number;
+  fileCount: number;
+  daysEvaluated: number;
+};
+type DashboardPayload = {
+  currentDate: string;
+  selectedDate: string;
+  selectedMonth: string;
+  period: PeriodMode;
+  totalCriteria: number;
+  totalInstitutions: number;
+  evaluatedCount: number;
+  unevaluatedCount: number;
+  fileCount: number;
+  averageScore: number;
+  maxAverageScore: number;
+  rows: Row[];
+  trend: Array<{ date: string; label: string; averageKpi: number; evaluatedCount: number }>;
+  directionAverages: Array<{ id: CommissionKey; short: string; title: string; value: number; max: number }>;
+  error?: string;
+};
+
+const emptyPayload: DashboardPayload = {
+  currentDate: "",
+  selectedDate: "",
+  selectedMonth: "",
+  period: "daily",
+  totalCriteria: criteria.length,
+  totalInstitutions: 0,
+  evaluatedCount: 0,
+  unevaluatedCount: 0,
+  fileCount: 0,
+  averageScore: 0,
+  maxAverageScore: 100,
+  rows: [],
+  trend: [],
+  directionAverages: [],
+};
+
+const periodLabels: Record<PeriodMode, string> = {
+  daily: "Kunlik",
+  monthly: "Oylik",
+  "60d": "60 kunlik yig‘indi",
+  directions: "Yo‘nalishlar kesimida",
+};
+
+function scoreStatus(row: Row) {
+  if (!row.evaluated) return { label: "Baholanmagan", className: "pending" };
+  const ratio = row.maxTotal > 0 ? row.total / row.maxTotal : 0;
+  if (ratio >= 0.86) return { label: "A’lo", className: "excellent" };
+  if (ratio >= 0.71) return { label: "Yaxshi", className: "good" };
+  if (ratio >= 0.56) return { label: "Qoniqarli", className: "average" };
+  return { label: "Tanqidiy", className: "critical" };
+}
+
+function formatDate(value: string) {
+  if (!value) return "—";
+  const [year, month, day] = value.split("-");
+  return `${day}.${month}.${year}`;
+}
+
+function escapeCsv(value: unknown) {
+  const text = String(value ?? "");
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+export default function PublicDashboard() {
+  const [data, setData] = useState<DashboardPayload>(emptyPayload);
+  const [period, setPeriod] = useState<PeriodMode>("daily");
+  const [selectedDate, setSelectedDate] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+
+  const load = useCallback(async (quiet = false) => {
+    if (!quiet) setLoading(true);
+    try {
+      const params = new URLSearchParams({ period });
+      if (selectedDate) params.set("date", selectedDate);
+      const response = await fetch(`/api/dashboard?${params.toString()}`, { cache: "no-store" });
+      const payload = (await response.json()) as DashboardPayload;
+      if (!response.ok) throw new Error(payload.error || "Dashboard ma’lumotlari yuklanmadi.");
+      setData(payload);
+      if (!selectedDate && payload.selectedDate) setSelectedDate(payload.selectedDate);
+      setError("");
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Dashboard ma’lumotlarini yuklashda xatolik.");
+    } finally {
+      if (!quiet) setLoading(false);
+    }
+  }, [period, selectedDate]);
+
+  useEffect(() => { void load(false); }, [load]);
+  useEffect(() => {
+    const timer = window.setInterval(() => { void load(true); }, 10000);
+    return () => window.clearInterval(timer);
+  }, [load]);
+
+  const filteredRows = useMemo(() => {
+    const needle = search.trim().toLocaleLowerCase("uz");
+    if (!needle) return data.rows;
+    return data.rows.filter((row) => `${row.name} ${row.district} ${row.type}`.toLocaleLowerCase("uz").includes(needle));
+  }, [data.rows, search]);
+
+  const directionMax = period === "60d" ? 1200 : 20;
+  const tableMax = period === "60d" ? 6000 : 100;
+  const assessedLabel = period === "daily" || period === "directions" ? "Baholangan mezonlar" : "Baholangan kunlar";
+
+  function downloadExcel() {
+    const headers = ["#", "Muassasa", "Tuman / shahar", ...commissions.map((item) => item.short), "Jami", "Maksimal", assessedLabel, "Fayllar", "Holat"];
+    const lines = [headers.map(escapeCsv).join(",")];
+    filteredRows.forEach((row, index) => {
+      const status = scoreStatus(row).label;
+      const assessed = period === "daily" || period === "directions" ? `${row.assessedCount}/${data.totalCriteria}` : `${row.daysEvaluated} kun`;
+      lines.push([
+        index + 1,
+        row.name,
+        row.district,
+        ...commissions.map((item) => row.parts[item.id]),
+        row.total,
+        row.maxTotal,
+        assessed,
+        row.fileCount,
+        status,
+      ].map(escapeCsv).join(","));
+    });
+    const blob = new Blob(["\ufeff" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `buxoro-kpi-${period}-${data.selectedDate || "natija"}.csv`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <div className="daily-board-shell">
+      <aside className="daily-board-sidebar">
+        <div className="daily-board-brand">
+          <div className="daily-board-brand-mark"><Stethoscope /></div>
+          <div><strong>Buxoro viloyati</strong><span>Sog‘liqni saqlash boshqarmasi</span><small>Baholash tizimi</small></div>
+        </div>
+        <nav className="daily-board-nav">
+          <Link className="active" href="/"><BarChart3 /> <span>Boshqaruv paneli</span></Link>
+          <a href="#institutions"><Building2 /> <span>Muassasalar</span></a>
+          <a href="#results"><ClipboardCheck /> <span>Baholash natijalari</span></a>
+          <Link href="/monitoring"><FileText /> <span>Fayllar monitoringi</span></Link>
+          <a href="#analytics"><BarChart3 /> <span>Statistika va tahlil</span></a>
+          <Link href="/evaluator"><Users /> <span>Baholovchilar</span></Link>
+          <Link href="/admin"><Settings /> <span>Sozlamalar</span></Link>
+        </nav>
+        <Link className="daily-board-login" href="/login"><LogIn /> <span>Tizimga kirish</span></Link>
+      </aside>
+
+      <main className="daily-board-main">
+        <header className="daily-board-header">
+          <div><h1>Boshqaruv paneli</h1><p>Muassasalar faoliyati bo‘yicha kunlik va oylik baholash natijalari</p></div>
+          <div className="daily-board-header-controls">
+            <label className="daily-board-date"><span><CalendarDays /> Sana</span><input type="date" value={selectedDate} max={data.currentDate || undefined} onChange={(event) => setSelectedDate(event.target.value)} /></label>
+            <label className="daily-board-period"><span>Davrni tanlang:</span><div><select value={period} onChange={(event) => setPeriod(event.target.value as PeriodMode)}><option value="daily">Kunlik</option><option value="monthly">Oylik</option><option value="60d">60 kunlik yig‘indi</option><option value="directions">Yo‘nalishlar kesimida</option></select><ChevronDown /></div></label>
+            <Link className="daily-board-admin-link" href="/login"><div><LockKeyhole /></div><span><strong>Kabinet</strong><small>Login orqali kirish</small></span></Link>
+          </div>
+        </header>
+
+        {loading && !data.rows.length ? (
+          <section className="daily-board-loading"><RefreshCw className="spin" /><strong>Dashboard yuklanmoqda...</strong></section>
+        ) : error ? (
+          <section className="daily-board-error"><BarChart3 /><div><strong>Dashboard ochilmadi</strong><span>{error}</span></div><button onClick={() => void load(false)}>Qayta urinish</button></section>
+        ) : (
+          <>
+            <section className="daily-board-metrics" id="analytics">
+              <article><div className="metric-mark blue"><Building2 /></div><div><span>Jami muassasalar</span><strong>{data.totalInstitutions}</strong><small>faol muassasa</small></div></article>
+              <article><div className="metric-mark green"><CheckCircle2 /></div><div><span>{period === "daily" || period === "directions" ? "Bugun baholangan" : period === "monthly" ? "Oyda baholangan" : "60 kunda baholangan"}</span><strong>{data.evaluatedCount}</strong><small>{data.totalInstitutions ? `${((data.evaluatedCount / data.totalInstitutions) * 100).toFixed(1)}%` : "0%"}</small></div></article>
+              <article><div className="metric-mark amber"><CalendarDays /></div><div><span>Baholanmagan</span><strong>{data.unevaluatedCount}</strong><small>{data.totalInstitutions ? `${((data.unevaluatedCount / data.totalInstitutions) * 100).toFixed(1)}%` : "0%"}</small></div></article>
+              <article><div className="metric-mark violet"><FileText /></div><div><span>Yuklangan fayllar</span><strong>{data.fileCount}</strong><small>{periodLabels[period]} davrida</small></div></article>
+              <article><div className="metric-mark rose"><BarChart3 /></div><div><span>O‘rtacha ball</span><strong>{data.averageScore}<em>/{data.maxAverageScore}</em></strong><small>{periodLabels[period]} natija</small></div></article>
+            </section>
+
+            <section className="daily-board-charts" id="results">
+              <article className="daily-board-chart-card">
+                <div className="chart-card-head"><div><strong>Kunlik baholash dinamikasi</strong><span>Oxirgi 7 kun · o‘rtacha KPI va baholangan muassasalar</span></div><button onClick={() => void load(true)} title="Yangilash"><RefreshCw /></button></div>
+                <div className="chart-wrap">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={data.trend} margin={{ top: 10, right: 16, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="label" tickLine={false} axisLine={false} />
+                      <YAxis domain={[0, 100]} tickLine={false} axisLine={false} />
+                      <Tooltip formatter={(value, name) => [value, name === "averageKpi" ? "O‘rtacha KPI" : "Baholangan muassasa"]} />
+                      <Line type="monotone" dataKey="averageKpi" name="O‘rtacha KPI" stroke="currentColor" strokeWidth={3} dot={{ r: 4 }} className="trend-line-one" />
+                      <Line type="monotone" dataKey="evaluatedCount" name="Baholangan muassasa" stroke="currentColor" strokeWidth={2} dot={{ r: 3 }} className="trend-line-two" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </article>
+
+              <article className="daily-board-chart-card">
+                <div className="chart-card-head"><div><strong>Yo‘nalishlar bo‘yicha natijalar</strong><span>{formatDate(data.selectedDate)} holatiga · maksimal 20 ball</span></div></div>
+                <div className="chart-wrap">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={data.directionAverages} margin={{ top: 10, right: 10, left: -22, bottom: 12 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="short" tickLine={false} axisLine={false} interval={0} tick={{ fontSize: 11 }} />
+                      <YAxis domain={[0, 20]} tickLine={false} axisLine={false} />
+                      <Tooltip formatter={(value) => [`${value}/20`, "O‘rtacha ball"]} />
+                      <Bar dataKey="value" name="O‘rtacha ball" radius={[7, 7, 0, 0]} className="direction-bar" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </article>
+            </section>
+
+            <section className="daily-board-table-card" id="institutions">
+              <div className="daily-board-tabs-row">
+                <div className="daily-board-tabs">
+                  <button className={period === "daily" ? "active" : ""} onClick={() => setPeriod("daily")}>Bugungi natija</button>
+                  <button className={period === "monthly" ? "active" : ""} onClick={() => setPeriod("monthly")}>Oylik natija</button>
+                  <button className={period === "60d" ? "active" : ""} onClick={() => setPeriod("60d")}>60 kunlik yig‘indi</button>
+                  <button className={period === "directions" ? "active" : ""} onClick={() => setPeriod("directions")}>Yo‘nalishlar kesimida</button>
+                </div>
+                <div className="daily-board-tools">
+                  <label><Search /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Muassasa nomi bo‘yicha qidirish..." /></label>
+                  <button className="search-button"><Search /> Qidirish</button>
+                  <button className="excel-button" onClick={downloadExcel}><Download /> Excel yuklash</button>
+                </div>
+              </div>
+
+              <div className="daily-board-table-scroll">
+                <table className="daily-board-table">
+                  <thead><tr><th>#</th><th>Muassasa nomi</th><th>Tuman / Shahar</th>{commissions.map((commission) => <th key={commission.id}>{commission.short}</th>)}<th>{period === "60d" ? "60 kunlik jami" : "Jami KPI"}</th><th>{assessedLabel}</th><th>Fayllar</th><th>Holat</th></tr></thead>
+                  <tbody>{filteredRows.map((row, index) => {
+                    const status = scoreStatus(row);
+                    return <tr key={row.id}>
+                      <td><span className="row-number">{index + 1}</span></td>
+                      <td className="name-cell"><strong>{row.name}</strong><span>{row.type}</span></td>
+                      <td>{row.district}</td>
+                      {commissions.map((commission) => <td key={commission.id} className="score-cell"><strong>{row.parts[commission.id]}</strong><small>/{directionMax}</small></td>)}
+                      <td className="total-cell"><strong>{row.total}</strong><small>/{tableMax}</small></td>
+                      <td>{period === "daily" || period === "directions" ? <span className="assessed-count">{row.assessedCount}/{data.totalCriteria}</span> : <span className="assessed-count">{row.daysEvaluated} kun</span>}</td>
+                      <td><span className="file-pill">{row.fileCount}</span></td>
+                      <td><span className={`daily-status ${status.className}`}>{status.label}</span></td>
+                    </tr>;
+                  })}</tbody>
+                </table>
+              </div>
+              {!filteredRows.length && <div className="daily-board-empty">Qidiruv bo‘yicha muassasa topilmadi.</div>}
+            </section>
+          </>
+        )}
+
+        <footer className="daily-board-footer"><span>© 2026 Buxoro viloyati Sog‘liqni saqlash boshqarmasi.</span><span>Natijalar har 10 soniyada avtomatik yangilanadi · {formatDate(data.currentDate)}</span></footer>
+      </main>
+    </div>
+  );
+}
