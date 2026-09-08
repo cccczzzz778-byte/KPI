@@ -1,0 +1,86 @@
+import { criteria, defaultInstitutions } from "@/lib/kpi-data";
+import { getKpiDatabase } from "@/lib/netlify-db";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+type PeriodMode = "daily" | "monthly";
+
+function tashkentDate() {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Tashkent",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const get = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
+  return `${get("year")}-${get("month")}-${get("day")}`;
+}
+
+export async function GET(request: Request) {
+  try {
+    const url = new URL(request.url);
+    const requestedPeriod = String(url.searchParams.get("period") || "daily");
+    const period: PeriodMode = requestedPeriod === "monthly" ? "monthly" : "daily";
+    const currentDate = tashkentDate();
+    const monthStart = `${currentDate.slice(0, 7)}-01`;
+    const db = getKpiDatabase();
+
+    const institutionPromise = db.pool.query(`
+      SELECT i.id, i.name, i.district, i.type, i.active,
+             r.responsible_name AS "responsibleName",
+             r.responsible_phone AS "responsiblePhone"
+      FROM institutions i
+      LEFT JOIN institution_responsibles r ON r.institution_id = i.id
+      ORDER BY LOWER(i.name)
+    `);
+
+    const evaluationPromise = period === "monthly"
+      ? db.pool.query(
+          `SELECT institution_id AS "institutionId",
+                  criterion_id AS "criterionId",
+                  AVG(score)::float8 AS score
+             FROM daily_evaluations
+            WHERE evaluation_date BETWEEN $1::date AND $2::date
+            GROUP BY institution_id, criterion_id`,
+          [monthStart, currentDate],
+        )
+      : db.pool.query(
+          `SELECT institution_id AS "institutionId",
+                  criterion_id AS "criterionId",
+                  score::float8 AS score
+             FROM daily_evaluations
+            WHERE evaluation_date = $1::date`,
+          [currentDate],
+        );
+
+    const [institutionResult, evaluationResult] = await Promise.all([institutionPromise, evaluationPromise]);
+
+    const institutionMap = new Map<string, Record<string, unknown>>(
+      defaultInstitutions.map((item) => [item.id, { ...item, active: 1 }]),
+    );
+    for (const row of institutionResult.rows) institutionMap.set(String(row.id), row);
+    const institutions = Array.from(institutionMap.values())
+      .filter((item) => Number(item.active) === 1)
+      .sort((a, b) => String(a.name).localeCompare(String(b.name), "uz"));
+
+    const validCriterionIds = new Set(criteria.map((item) => item.id));
+    const evaluations = evaluationResult.rows
+      .filter((row) => validCriterionIds.has(String(row.criterionId)))
+      .map((row) => ({
+        institutionId: String(row.institutionId),
+        roundDay: 10,
+        criterionId: String(row.criterionId),
+        score: Number(Number(row.score || 0).toFixed(3)),
+      }));
+
+    return Response.json(
+      { institutions, evaluations, period, currentDate },
+      { headers: { "cache-control": "no-store, no-cache, must-revalidate" } },
+    );
+  } catch (error) {
+    console.error("public dashboard failed", error);
+    const message = error instanceof Error ? error.message : "Dashboard ma’lumotlarini yuklab bo‘lmadi.";
+    return Response.json({ error: message }, { status: 500, headers: { "cache-control": "no-store" } });
+  }
+}
