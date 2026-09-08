@@ -37,7 +37,7 @@
     "recharts": "^3.8.0",
     "sonner": "^2.0.8",
     "tailwind-merge": "3.6.0",
-    "vaul": "^1.4.2",
+    "vaul": "^1.6.7",
     "zod": "^3.25.76",
     "@aws-sdk/client-s3": "latest",
     "@aws-sdk/s3-request-presigner": "latest",
