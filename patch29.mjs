@@ -1,13 +1,42 @@
 import fs from "node:fs";
 
-for (const file of ["components/public-dashboard.tsx", "app/api/dashboard/route.ts"]) {
+function printSnippets(file, needles, before = 20, after = 45) {
   if (!fs.existsSync(file)) {
-    console.log(`PATCH29-FULL missing ${file}`);
-    continue;
+    console.log(`PATCH29SRC|${file}|MISSING`);
+    return;
   }
   const lines = fs.readFileSync(file, "utf8").split(/\r?\n/);
-  console.log(`PATCH29-FULL-BEGIN ${file}`);
-  lines.forEach((line, index) => console.log(`${index + 1}: ${line}`));
-  console.log(`PATCH29-FULL-END ${file}`);
+  const selected = new Set();
+  for (let i = 0; i < lines.length; i++) {
+    if (needles.some((needle) => lines[i].includes(needle))) {
+      for (let j = Math.max(0, i - before); j < Math.min(lines.length, i + after + 1); j++) selected.add(j);
+    }
+  }
+  for (const index of [...selected].sort((a,b)=>a-b)) {
+    console.log(`PATCH29SRC|${file}|${index + 1}|${lines[index]}`);
+  }
 }
-console.log("PATCH29-FULL complete");
+
+printSnippets("components/public-dashboard.tsx", [
+  "Muassasalar reytingi",
+  "10-kunlik nazorat",
+  "YETAKCHI NATIJA",
+  "O‘RTACHA KPI",
+  "JAMI KPI",
+  "MAS’UL SHAXS",
+  "fetch(",
+  "function PublicDashboard",
+  "export default function",
+  "useState",
+]);
+printSnippets("app/api/dashboard/route.ts", [
+  "export async function GET",
+  "evaluations",
+  "daily_evaluations",
+  "institutions",
+  "responsible",
+  "attachments",
+  "Response.json",
+  "criteria",
+]);
+console.log("PATCH29SRC|DONE");
