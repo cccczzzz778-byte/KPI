@@ -5,17 +5,17 @@ function writeFile(relative, content) {
   const target = path.join(process.cwd(), relative);
   fs.mkdirSync(path.dirname(target), { recursive: true });
   fs.writeFileSync(target, content, 'utf8');
-  console.log(`PATCH33: created ${relative}`);
+  console.log('PATCH33: created ' + relative);
 }
 
 function patchFile(relative, patcher) {
   const target = path.join(process.cwd(), relative);
-  if (!fs.existsSync(target)) throw new Error(`PATCH33: ${relative} not found`);
+  if (!fs.existsSync(target)) throw new Error('PATCH33: ' + relative + ' not found');
   const original = fs.readFileSync(target, 'utf8');
   const updated = patcher(original);
-  if (updated === original) throw new Error(`PATCH33: no changes applied to ${relative}`);
+  if (updated === original) throw new Error('PATCH33: no changes applied to ' + relative);
   fs.writeFileSync(target, updated, 'utf8');
-  console.log(`PATCH33: patched ${relative}`);
+  console.log('PATCH33: patched ' + relative);
 }
 
 const route = String.raw`import { criteria } from "@/lib/kpi-data";
@@ -41,19 +41,19 @@ export async function GET(request: Request) {
     requireInstitution(session);
 
     const db = getKpiDatabase();
-    const result = await db.pool.query(
-      ` + "`" + `SELECT criterion_id AS "criterionId",
-              score,
-              note,
-              evaluator_name AS "evaluatorName",
-              TO_CHAR(evaluation_date, 'YYYY-MM-DD') AS "evaluationDate",
-              updated_at AS "updatedAt"
-         FROM daily_evaluations
-        WHERE institution_id = $1
-          AND evaluation_date = (NOW() AT TIME ZONE 'Asia/Tashkent')::date
-        ORDER BY updated_at DESC` + "`" + `,
-      [session.institutionId],
-    );
+    const sql = [
+      'SELECT criterion_id AS "criterionId",',
+      '       score,',
+      '       note,',
+      '       evaluator_name AS "evaluatorName",',
+      "       TO_CHAR(evaluation_date, 'YYYY-MM-DD') AS \"evaluationDate\",",
+      '       updated_at AS "updatedAt"',
+      '  FROM daily_evaluations',
+      ' WHERE institution_id = $1',
+      "   AND evaluation_date = (NOW() AT TIME ZONE 'Asia/Tashkent')::date",
+      ' ORDER BY updated_at DESC',
+    ].join('\n');
+    const result = await db.pool.query(sql, [session.institutionId]);
 
     const items = result.rows.map((row) => ({
       ...row,
@@ -170,7 +170,7 @@ export function InstitutionDailyFeedback() {
         <div className="institution-daily-feedback__list">
           {items.map((item) => (
             <article className="institution-daily-feedback__row" key={item.criterionId}>
-              <div className={`institution-daily-feedback__score score-${Math.max(0, Math.min(2, Number(item.score)))}`}>
+              <div className={"institution-daily-feedback__score score-" + Math.max(0, Math.min(2, Number(item.score)))}>
                 <strong>{item.score}</strong><small>ball</small>
               </div>
               <div className="institution-daily-feedback__content">
@@ -216,7 +216,23 @@ const cssPath = path.join(process.cwd(), 'app/globals.css');
 let css = fs.readFileSync(cssPath, 'utf8');
 const marker = '/* PATCH33_INSTITUTION_DAILY_FEEDBACK */';
 if (!css.includes(marker)) {
-  css += `\n\n${marker}\n.institution-daily-feedback{width:min(1080px,calc(100% - 32px));max-width:1080px;margin:18px auto;padding:18px;border:1px solid #d9e8f2;border-radius:18px;background:#fff;box-shadow:0 8px 26px rgba(45,92,126,.07);box-sizing:border-box}\n.institution-daily-feedback__head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}\n.institution-daily-feedback__title{display:flex;gap:12px;align-items:flex-start;min-width:0;flex:1 1 560px}\n.institution-daily-feedback__icon{width:44px;height:44px;flex:0 0 44px;display:flex;align-items:center;justify-content:center;border-radius:13px;background:#eaf8ff;color:#137fae}\n.institution-daily-feedback h2{margin:0;color:#153c59;font-size:18px;line-height:1.25}.institution-daily-feedback p{margin:6px 0 0;color:#688196;font-size:13px;line-height:1.5}\n.institution-daily-feedback__tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.institution-daily-feedback__date{padding:8px 11px;border-radius:10px;background:#eff8fd;color:#2f6f96;font-weight:800;font-size:12px}.institution-daily-feedback__tools button{display:inline-flex;align-items:center;gap:7px;min-height:38px;padding:8px 11px;border:1px solid #cfe1ed;border-radius:10px;background:#fff;color:#176f9d;font-weight:800;cursor:pointer}.institution-daily-feedback__tools button:disabled{opacity:.55;cursor:default}\n.institution-daily-feedback .spin{animation:institutionFeedbackSpin .8s linear infinite}@keyframes institutionFeedbackSpin{to{transform:rotate(360deg)}}\n.institution-daily-feedback__summary{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.institution-daily-feedback__summary span{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;background:#f2f9fd;color:#4e7188;font-size:12px}.institution-daily-feedback__summary strong{color:#173d59}\n.institution-daily-feedback__list{display:grid;gap:10px;margin-top:14px}.institution-daily-feedback__row{display:grid;grid-template-columns:58px minmax(0,1fr);gap:12px;padding:13px;border:1px solid #e0ebf2;border-radius:14px;background:#fbfdff}.institution-daily-feedback__score{width:56px;height:56px;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#eef4f7;color:#45677d}.institution-daily-feedback__score strong{font-size:22px;line-height:1}.institution-daily-feedback__score small{margin-top:3px;font-size:10px;font-weight:800;text-transform:uppercase}.institution-daily-feedback__score.score-1{background:#fff7df;color:#956c16}.institution-daily-feedback__score.score-2{background:#eaf8ef;color:#247345}.institution-daily-feedback__score.score-0{background:#fff0f0;color:#a53a3a}\n.institution-daily-feedback__criterion{display:block;color:#173d59;font-size:13px;line-height:1.4}.institution-daily-feedback__note{margin-top:7px;padding:10px 11px;border-left:3px solid #4aa7cf;border-radius:8px;background:#f1f9fd;color:#254b64;font-size:13px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}.institution-daily-feedback__note.is-empty{border-left-color:#c7d5de;background:#f7f9fa;color:#80909c;font-style:italic}.institution-daily-feedback__meta{display:flex;gap:12px;flex-wrap:wrap;margin-top:7px;color:#8497a5;font-size:11px}\n.institution-daily-feedback__state,.institution-daily-feedback__error{margin-top:14px;padding:15px;border:1px dashed #ccdde8;border-radius:12px;background:#fbfdff;color:#607a8f;text-align:center}.institution-daily-feedback__error{border-style:solid;border-color:#f1c8c8;background:#fff7f7;color:#a12c2c;text-align:left}\n@media(max-width:720px){.institution-daily-feedback{width:calc(100% - 20px);padding:14px}.institution-daily-feedback__tools{width:100%}.institution-daily-feedback__tools button{margin-left:auto}.institution-daily-feedback__row{grid-template-columns:50px minmax(0,1fr);padding:11px}.institution-daily-feedback__score{width:48px;height:48px}.institution-daily-feedback__score strong{font-size:19px}}\n`;
+  const cssAppend = [
+    '', marker,
+    '.institution-daily-feedback{width:min(1080px,calc(100% - 32px));max-width:1080px;margin:18px auto;padding:18px;border:1px solid #d9e8f2;border-radius:18px;background:#fff;box-shadow:0 8px 26px rgba(45,92,126,.07);box-sizing:border-box}',
+    '.institution-daily-feedback__head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}',
+    '.institution-daily-feedback__title{display:flex;gap:12px;align-items:flex-start;min-width:0;flex:1 1 560px}',
+    '.institution-daily-feedback__icon{width:44px;height:44px;flex:0 0 44px;display:flex;align-items:center;justify-content:center;border-radius:13px;background:#eaf8ff;color:#137fae}',
+    '.institution-daily-feedback h2{margin:0;color:#153c59;font-size:18px;line-height:1.25}.institution-daily-feedback p{margin:6px 0 0;color:#688196;font-size:13px;line-height:1.5}',
+    '.institution-daily-feedback__tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.institution-daily-feedback__date{padding:8px 11px;border-radius:10px;background:#eff8fd;color:#2f6f96;font-weight:800;font-size:12px}.institution-daily-feedback__tools button{display:inline-flex;align-items:center;gap:7px;min-height:38px;padding:8px 11px;border:1px solid #cfe1ed;border-radius:10px;background:#fff;color:#176f9d;font-weight:800;cursor:pointer}.institution-daily-feedback__tools button:disabled{opacity:.55;cursor:default}',
+    '.institution-daily-feedback .spin{animation:institutionFeedbackSpin .8s linear infinite}@keyframes institutionFeedbackSpin{to{transform:rotate(360deg)}}',
+    '.institution-daily-feedback__summary{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.institution-daily-feedback__summary span{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;background:#f2f9fd;color:#4e7188;font-size:12px}.institution-daily-feedback__summary strong{color:#173d59}',
+    '.institution-daily-feedback__list{display:grid;gap:10px;margin-top:14px}.institution-daily-feedback__row{display:grid;grid-template-columns:58px minmax(0,1fr);gap:12px;padding:13px;border:1px solid #e0ebf2;border-radius:14px;background:#fbfdff}.institution-daily-feedback__score{width:56px;height:56px;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#eef4f7;color:#45677d}.institution-daily-feedback__score strong{font-size:22px;line-height:1}.institution-daily-feedback__score small{margin-top:3px;font-size:10px;font-weight:800;text-transform:uppercase}.institution-daily-feedback__score.score-1{background:#fff7df;color:#956c16}.institution-daily-feedback__score.score-2{background:#eaf8ef;color:#247345}.institution-daily-feedback__score.score-0{background:#fff0f0;color:#a53a3a}',
+    '.institution-daily-feedback__criterion{display:block;color:#173d59;font-size:13px;line-height:1.4}.institution-daily-feedback__note{margin-top:7px;padding:10px 11px;border-left:3px solid #4aa7cf;border-radius:8px;background:#f1f9fd;color:#254b64;font-size:13px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}.institution-daily-feedback__note.is-empty{border-left-color:#c7d5de;background:#f7f9fa;color:#80909c;font-style:italic}.institution-daily-feedback__meta{display:flex;gap:12px;flex-wrap:wrap;margin-top:7px;color:#8497a5;font-size:11px}',
+    '.institution-daily-feedback__state,.institution-daily-feedback__error{margin-top:14px;padding:15px;border:1px dashed #ccdde8;border-radius:12px;background:#fbfdff;color:#607a8f;text-align:center}.institution-daily-feedback__error{border-style:solid;border-color:#f1c8c8;background:#fff7f7;color:#a12c2c;text-align:left}',
+    '@media(max-width:720px){.institution-daily-feedback{width:calc(100% - 20px);padding:14px}.institution-daily-feedback__tools{width:100%}.institution-daily-feedback__tools button{margin-left:auto}.institution-daily-feedback__row{grid-template-columns:50px minmax(0,1fr);padding:11px}.institution-daily-feedback__score{width:48px;height:48px}.institution-daily-feedback__score strong{font-size:19px}}',
+    ''
+  ].join('\n');
+  css += cssAppend;
   fs.writeFileSync(cssPath, css, 'utf8');
   console.log('PATCH33: institution daily feedback styling added.');
 }
