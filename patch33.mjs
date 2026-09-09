@@ -32,7 +32,7 @@ function requireInstitution(session: Awaited<ReturnType<typeof requireAppUser>>)
 
 function criterionTitle(criterionId: unknown) {
   const id = String(criterionId || "");
-  return criteria.find((item) => String(item.id) === id)?.title || id || "Mezon ko‘rsatilmagan";
+  return criteria.find((item) => String(item.id) === id)?.label || id || "Mezon ko‘rsatilmagan";
 }
 
 export async function GET(request: Request) {
