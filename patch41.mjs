@@ -12,7 +12,7 @@ function write(relative, source) {
   console.log(`PATCH41: patched ${relative}`);
 }
 
-// 1) Apply the PDF Ijro muddati to every active criterion.
+// Apply the uploaded PDF's Ijro muddati to all 68 active criteria.
 {
   const file = 'lib/kpi-data.ts';
   let source = mustFile(file);
@@ -32,8 +32,8 @@ function write(relative, source) {
   write(file, source);
 }
 
-// 2) Re-open institution criterion uploads after the temporary global lock.
-const uploadBlock = `\n    /* PATCH37_INSTITUTION_UPLOAD_BLOCK */\n    if (String(session.role) === "institution") {\n      return Response.json({ error: "Muassasalar uchun fayl yuklash bloklangan." }, { status: 403, headers: { "cache-control": "no-store" } });\n    }`;
+// Re-open institution uploads that patch37 temporarily blocked. Keep institution deletion blocked.
+const uploadBlock = '\n    /* PATCH37_INSTITUTION_UPLOAD_BLOCK */\n    if (String(session.role) === "institution") {\n      return Response.json({ error: "Muassasalar uchun fayl yuklash bloklangan." }, { status: 403, headers: { "cache-control": "no-store" } });\n    }';
 for (const file of ['app/api/uploads/prepare/route.ts','app/api/uploads/blob/route.ts','app/api/uploads/complete/route.ts']) {
   let source = mustFile(file);
   if (!source.includes('PATCH37_INSTITUTION_UPLOAD_BLOCK')) throw new Error(`PATCH41: upload lock marker missing in ${file}`);
@@ -42,79 +42,56 @@ for (const file of ['app/api/uploads/prepare/route.ts','app/api/uploads/blob/rou
   write(file, source);
 }
 
-// Keep institution-side deletion blocked so a deleted file cannot be used to bypass the recurrence period.
-// Existing evidence remains preserved.
-
-// 3) Enforce recurrence in upload preparation.
+// Enforce criterion-specific upload recurrence on the server.
 {
   const file = 'app/api/uploads/prepare/route.ts';
   let source = mustFile(file);
-  if (!source.includes('PATCH41_PDF_UPLOAD_RECURRENCE')) {
-    const anchor = '    const uploadId = crypto.randomUUID();';
-    if (!source.includes(anchor)) throw new Error('PATCH41: upload prepare anchor not found');
-    const code = String.raw`
-    /* PATCH41_PDF_UPLOAD_RECURRENCE */
-    if (kind === "institution_criterion") {
-      const recurrenceCriterionId = String(body.criterionId ?? "").trim();
-      const recurrenceInstitutionId = String(session.institutionId ?? "").trim();
-      const recurrenceCriterion = criteria.find((item) => item.id === recurrenceCriterionId);
-      if (!recurrenceCriterion || !recurrenceInstitutionId) {
-        return Response.json({ error: "Muassasa yoki mezon topilmadi." }, { status: 400 });
-      }
-
-      const deadline = String(recurrenceCriterion.deadline || "").toLocaleLowerCase("uz");
-      let intervalDays: number | null = null;
-      if (deadline.includes("har kuni") || deadline.includes("doimiy") || deadline.includes("muntazam") || deadline.includes("1 kun")) intervalDays = 1;
-      else if (deadline.includes("1 hafta") || deadline.includes("haftada 1 marta")) intervalDays = 7;
-      else if (deadline.includes("10 kun")) intervalDays = 10;
-      else if (deadline.includes("1 oy") || deadline.includes("har oyda")) intervalDays = 30;
-      else if (deadline.includes("60 kun")) intervalDays = 60;
-      else if (deadline.includes("ikkinchi yarim yillik")) intervalDays = 180;
-
-      if (intervalDays) {
-        const recurrenceDb = getKpiDatabase();
-        const recentResult = await recurrenceDb.pool.query(
-          `SELECT created_at AS "createdAt"
-             FROM attachments
-            WHERE institution_id = $1
-              AND criterion_id = $2
-              AND source IN ('institution', 'institution_submission')
-            ORDER BY created_at DESC
-            LIMIT 1`,
-          [recurrenceInstitutionId, recurrenceCriterionId],
-        );
-        const lastCreatedAt = recentResult.rows[0]?.createdAt ? new Date(recentResult.rows[0].createdAt).getTime() : 0;
-        const nextAt = lastCreatedAt ? lastCreatedAt + intervalDays * 24 * 60 * 60 * 1000 : 0;
-        if (nextAt && Date.now() < nextAt) {
-          const nextDate = new Intl.DateTimeFormat("en-CA", {
-            timeZone: "Asia/Tashkent", year: "numeric", month: "2-digit", day: "2-digit",
-          }).format(new Date(nextAt));
-          return Response.json(
-            {
-              error: `Bu mezon uchun fayl ${recurrenceCriterion.deadline} bo‘yicha qabul qilinadi. Keyingi yuklash: ${nextDate}.`,
-              nextUploadDate: nextDate,
-              deadline: recurrenceCriterion.deadline,
-            },
-            { status: 409, headers: { "cache-control": "no-store" } },
-          );
-        }
-      }
-    }
-
-`;
-    source = source.replace(anchor, code + anchor);
-    write(file, source);
-  }
+  const anchor = '    const uploadId = crypto.randomUUID();';
+  if (!source.includes(anchor)) throw new Error('PATCH41: upload prepare anchor not found');
+  const code = [
+    '    /* PATCH41_PDF_UPLOAD_RECURRENCE */',
+    '    if (kind === "institution_criterion") {',
+    '      const recurrenceCriterionId = String(body.criterionId ?? "").trim();',
+    '      const recurrenceInstitutionId = String(session.institutionId ?? "").trim();',
+    '      const recurrenceCriterion = criteria.find((item) => item.id === recurrenceCriterionId);',
+    '      if (!recurrenceCriterion || !recurrenceInstitutionId) {',
+    '        return Response.json({ error: "Muassasa yoki mezon topilmadi." }, { status: 400 });',
+    '      }',
+    '',
+    '      const deadline = String(recurrenceCriterion.deadline || "").toLocaleLowerCase("uz");',
+    '      let intervalDays: number | null = null;',
+    '      if (deadline.includes("har kuni") || deadline.includes("doimiy") || deadline.includes("muntazam") || deadline.includes("1 kun")) intervalDays = 1;',
+    '      else if (deadline.includes("1 hafta") || deadline.includes("haftada 1 marta")) intervalDays = 7;',
+    '      else if (deadline.includes("10 kun")) intervalDays = 10;',
+    '      else if (deadline.includes("1 oy") || deadline.includes("har oyda")) intervalDays = 30;',
+    '      else if (deadline.includes("60 kun")) intervalDays = 60;',
+    '      else if (deadline.includes("ikkinchi yarim yillik")) intervalDays = 180;',
+    '',
+    '      if (intervalDays) {',
+    '        const recurrenceDb = getKpiDatabase();',
+    '        const recentResult = await recurrenceDb.pool.query(',
+    '          "SELECT created_at AS \\"createdAt\\" FROM attachments WHERE institution_id = $1 AND criterion_id = $2 AND source IN (\'institution\', \'institution_submission\') ORDER BY created_at DESC LIMIT 1",',
+    '          [recurrenceInstitutionId, recurrenceCriterionId],',
+    '        );',
+    '        const lastCreatedAt = recentResult.rows[0]?.createdAt ? new Date(recentResult.rows[0].createdAt).getTime() : 0;',
+    '        const nextAt = lastCreatedAt ? lastCreatedAt + intervalDays * 24 * 60 * 60 * 1000 : 0;',
+    '        if (nextAt && Date.now() < nextAt) {',
+    '          const nextDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Tashkent", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(nextAt));',
+    '          return Response.json({ error: "Bu mezon uchun fayl " + recurrenceCriterion.deadline + " bo‘yicha qabul qilinadi. Keyingi yuklash: " + nextDate + ".", nextUploadDate: nextDate, deadline: recurrenceCriterion.deadline }, { status: 409, headers: { "cache-control": "no-store" } });',
+    '        }',
+    '      }',
+    '    }',
+    '',
+  ].join('\n');
+  source = source.replace(anchor, code + anchor);
+  write(file, source);
 }
 
-// 4) Remove the temporary lock notice and show file controls again.
+// Remove temporary lock notice and unhide upload controls.
 {
   const file = 'components/institution-portal.tsx';
   let source = mustFile(file);
-  source = source.replace(
-    `<div className="institution-upload-locked-notice" role="status"><strong>Fayl yuklash bloklangan</strong><span>Muassasa kabinetidan yangi fayl yuklash va mavjud faylni almashtirish vaqtincha yopilgan. Avval yuklangan fayllar saqlanadi va ko‘rish uchun ochiq.</span></div>\n      `,
-    '',
-  );
+  source = source.replace('<div className="institution-upload-locked-notice" role="status"><strong>Fayl yuklash bloklangan</strong><span>Muassasa kabinetidan yangi fayl yuklash va mavjud faylni almashtirish vaqtincha yopilgan. Avval yuklangan fayllar saqlanadi va ko‘rish uchun ochiq.</span></div>\n      ', '');
   write(file, source);
 }
 
@@ -128,35 +105,14 @@ for (const file of ['app/api/uploads/prepare/route.ts','app/api/uploads/blob/rou
   }
 }
 
-// 5) Institution-visible score must remain visible until an evaluator changes it.
+// Show the persisted current score to the institution until the evaluator changes it.
 {
   const file = 'app/api/institution/feedback/route.ts';
   let source = mustFile(file);
-  const oldQuery = [
-    `      'SELECT criterion_id AS "criterionId",',`,
-    `      '       score,',`,
-    `      '       note,',`,
-    `      '       evaluator_name AS "evaluatorName",',`,
-    `      "       TO_CHAR(evaluation_date, 'YYYY-MM-DD') AS \\"evaluationDate\\",",`,
-    `      '       updated_at AS "updatedAt"',`,
-    `      '  FROM daily_evaluations',`,
-    `      ' WHERE institution_id = $1',`,
-    `      "   AND evaluation_date = (NOW() AT TIME ZONE 'Asia/Tashkent')::date",`,
-    `      ' ORDER BY updated_at DESC',`,
-  ].join('\n');
-  const newQuery = [
-    `      'SELECT criterion_id AS "criterionId",',`,
-    `      '       score,',`,
-    `      '       note,',`,
-    `      '       evaluator_name AS "evaluatorName",',`,
-    `      "       TO_CHAR(updated_at AT TIME ZONE 'Asia/Tashkent', 'YYYY-MM-DD') AS \\"evaluationDate\\",",`,
-    `      '       updated_at AS "updatedAt"',`,
-    `      '  FROM evaluations',`,
-    `      ' WHERE institution_id = $1',`,
-    `      ' ORDER BY updated_at DESC',`,
-  ].join('\n');
-  if (!source.includes(oldQuery)) throw new Error('PATCH41: institution feedback query anchor not found');
-  source = source.replace(oldQuery, newQuery);
+  if (!source.includes("'  FROM daily_evaluations',")) throw new Error('PATCH41: daily feedback FROM anchor not found');
+  source = source.replace("TO_CHAR(evaluation_date, 'YYYY-MM-DD')", "TO_CHAR(updated_at AT TIME ZONE 'Asia/Tashkent', 'YYYY-MM-DD')");
+  source = source.replace("      '  FROM daily_evaluations',", "      '  FROM evaluations',");
+  source = source.replace('      "   AND evaluation_date = (NOW() AT TIME ZONE \'Asia/Tashkent\')::date",\n', '');
   write(file, source);
 }
 
