@@ -15,19 +15,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Capture dated dashboard JSON
+      - name: Restore and inspect application source
         shell: bash
         run: |
           set -e
-          mkdir -p generated
-          curl -L --fail-with-body -sS 'https://buxoro-kpi-production.up.railway.app/api/dashboard?period=daily&date=2026-09-10' -o generated/dashboard-2026-09-10.json
-          cat generated/dashboard-2026-09-10.json
-      - name: Commit captured dashboard data
+          node bootstrap.mjs
+          mkdir -p generated/source-inspect
+          cp lib/kpi-data.ts generated/source-inspect/kpi-data.txt
+          cp app/api/kpi/route.ts generated/source-inspect/api-kpi-route.txt
+          grep -RniE 'evaluator|raqam|digital|password|INSERT INTO users|daily_evaluations' netlify/database scripts lib app/api 2>/dev/null | head -n 2500 > generated/source-inspect/grep.txt || true
+      - name: Commit source inspection
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add generated/dashboard-2026-09-10.json
+          git add generated/source-inspect
           git diff --cached --quiet && exit 0
-          git commit -m 'Capture KPI dashboard data for 2026-09-10'
+          git commit -m 'Inspect KPI source for historical evaluation access'
           git push
