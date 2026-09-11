@@ -1,0 +1,22 @@
+app/api/kpi/route.ts:38:      db.pool.query("SELECT institution_id AS \"institutionId\", criterion_id AS \"criterionId\", TO_CHAR(evaluation_date, 'YYYY-MM-DD') AS \"evaluationDate\", score, note, evaluator_email AS \"evaluatorEmail\", evaluator_name AS \"evaluatorName\", created_at AS \"createdAt\", updated_at AS \"updatedAt\" FROM daily_evaluations ORDER BY evaluation_date DESC, updated_at DESC"),
+app/api/kpi/route.ts:60:    const dailyEvaluations = dailyEvaluationRows.filter((row) =>
+app/api/kpi/route.ts:81:    return Response.json({ session, institutions, evaluations, dailyEvaluations, attachments, users, auditLogs, uploadSettings });
+app/api/kpi/route.ts:123:            `INSERT INTO daily_evaluations (institution_id, criterion_id, evaluation_date, score, note, evaluator_email, evaluator_name, created_at, updated_at)
+app/api/kpi/route.ts:125:             ON CONFLICT (institution_id, criterion_id, evaluation_date)
+app/api/dashboard/route.ts:50:             FROM daily_evaluations
+app/api/dashboard/route.ts:51:            WHERE evaluation_date BETWEEN (($1::date - INTERVAL '29 days')::date) AND $1::date
+app/api/dashboard/route.ts:52:              AND EXTRACT(ISODOW FROM evaluation_date) BETWEEN 1 AND 5
+app/api/dashboard/route.ts:60:             FROM daily_evaluations
+app/api/dashboard/route.ts:61:            WHERE evaluation_date = $1::date`,
+app/api/reports/digital/route.ts:49:           FROM daily_evaluations
+app/api/reports/digital/route.ts:50:          WHERE evaluation_date=$1::date AND criterion_id = ANY($2::text[])
+app/api/institution/feedback/route.ts:29:      "       TO_CHAR(evaluation_date, 'YYYY-MM-DD') AS \"evaluationDate\",",
+app/api/institution/feedback/route.ts:31:      '  FROM daily_evaluations',
+app/api/institution/feedback/route.ts:33:      "   AND evaluation_date = (NOW() AT TIME ZONE 'Asia/Tashkent')::date",
+components/evaluator-reference-panel.tsx:318:  const dailyEvaluations = Array.isArray(data.dailyEvaluations) ? data.dailyEvaluations : [];
+components/evaluator-reference-panel.tsx:354:    const rows = dailyEvaluations.filter((item: AnyRecord) => String(item.institutionId) === String(institutionId)
+components/kpi-app.tsx:90:type DashboardData = { session: Session | null; institutions: Institution[]; evaluations: Evaluation[]; dailyEvaluations: DailyEvaluation[]; attachments: Attachment[]; users: AppUser[]; auditLogs: AuditLog[]; uploadSettings: { uploadDate: string; openTime: string; closeTime: string } };
+components/kpi-app.tsx:92:const EMPTY_DATA: DashboardData = { session: null, institutions: [], evaluations: [], dailyEvaluations: [], attachments: [], users: [], auditLogs: [], uploadSettings: { uploadDate: "", openTime: "08:00", closeTime: "18:00" } };
+components/kpi-app.tsx:195:      dailyEvaluations: payload.dailyEvaluations ?? [],
+components/kpi-app.tsx:262:    const todayRows = data.dailyEvaluations.filter((item) => item.institutionId === institution.id && item.evaluationDate === today);
+components/kpi-app.tsx:368:  const cumulative60 = selectedInstitution ? cumulative60Score(data.dailyEvaluations, selectedInstitution.id, activeCriterionIds) : 0;
