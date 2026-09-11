@@ -22,7 +22,7 @@ function blockInstitutionUploadRoute(relative) {
     const needle = 'const session = await requireAppUser(request);';
     const index = source.indexOf(needle);
     if (index < 0) throw new Error(`PATCH37: session anchor not found in ${relative}`);
-    const replacement = `${needle}\n    /* PATCH37_INSTITUTION_UPLOAD_BLOCK */\n    if (session.role === "institution") {\n      return Response.json({ error: "${BLOCK_MESSAGE}" }, { status: 403, headers: { "cache-control": "no-store" } });\n    }`;
+    const replacement = `${needle}\n    /* PATCH37_INSTITUTION_UPLOAD_BLOCK */\n    if (String(session.role) === "institution") {\n      return Response.json({ error: "${BLOCK_MESSAGE}" }, { status: 403, headers: { "cache-control": "no-store" } });\n    }`;
     return source.slice(0, index) + source.slice(index).replace(needle, replacement);
   });
 }
