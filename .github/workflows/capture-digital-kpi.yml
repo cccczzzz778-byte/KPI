@@ -1,0 +1,43 @@
+name: Capture digital KPI report
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/capture-digital-kpi.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Wait for Railway deployment and capture report
+        shell: bash
+        run: |
+          set -e
+          mkdir -p generated
+          URL='https://buxoro-kpi-production.up.railway.app/api/reports/digital?date=2026-09-10'
+          ok=0
+          for i in $(seq 1 24); do
+            code=$(curl -L -sS -o generated/raqamlashtirish-kpi-2026-09-10.svg -w '%{http_code}' "$URL" || true)
+            if [ "$code" = '200' ] && grep -q '<svg' generated/raqamlashtirish-kpi-2026-09-10.svg; then
+              ok=1
+              break
+            fi
+            echo "Attempt $i returned $code; waiting 15 seconds"
+            sleep 15
+          done
+          test "$ok" = '1'
+      - name: Commit generated report
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add generated/raqamlashtirish-kpi-2026-09-10.svg
+          git diff --cached --quiet && exit 0
+          git commit -m 'Capture digital KPI report for 2026-09-10'
+          git push
