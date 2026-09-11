@@ -1,0 +1,72 @@
+netlify/database/migrations/010_reset-admin-and-institution-038-credentials/migration.sql:11:INSERT INTO users (email, name, role, commission, active, password_hash, institution_id)
+netlify/database/migrations/010_reset-admin-and-institution-038-credentials/migration.sql:18:  password_hash = EXCLUDED.password_hash,
+netlify/database/migrations/010_reset-admin-and-institution-038-credentials/migration.sql:22:INSERT INTO users (email, name, role, commission, active, password_hash, institution_id)
+netlify/database/migrations/010_reset-admin-and-institution-038-credentials/migration.sql:29:  password_hash = EXCLUDED.password_hash,
+lib/kpi-data.ts:1:export type CommissionKey = "ijro" | "birlamchi" | "statsionar" | "raqam" | "moliya";
+lib/kpi-data.ts:77:    id: "raqam" as const,
+lib/kpi-data.ts:78:    short: "Raqamlashtirish",
+lib/kpi-data.ts:79:    title: "Raqamlashtirish va IT infratuzilmasi",
+lib/kpi-data.ts:431:    "commission": "raqam",
+lib/kpi-data.ts:432:    "title": "Dori zaxirasini soat 08:00 va 17:00 da raqamli monitoring qilish",
+lib/kpi-data.ts:439:    "commission": "raqam",
+lib/kpi-data.ts:447:    "commission": "raqam",
+lib/kpi-data.ts:455:    "commission": "raqam",
+lib/kpi-data.ts:463:    "commission": "raqam",
+lib/kpi-data.ts:471:    "commission": "raqam",
+lib/kpi-data.ts:479:    "commission": "raqam",
+lib/kpi-data.ts:480:    "title": "Hamkor tashkilotlar bilan raqamli targ‘ibot ishlarini olib borish",
+lib/kpi-data.ts:486:    "id": "digital-cash-monitoring",
+lib/kpi-data.ts:487:    "commission": "raqam",
+lib/kpi-data.ts:491:    "source": "Qo‘shimcha raqamlashtirish mezoni"
+lib/kpi-data.ts:494:    "id": "digital-camera-monitoring",
+lib/kpi-data.ts:495:    "commission": "raqam",
+lib/kpi-data.ts:499:    "source": "Qo‘shimcha raqamlashtirish mezoni"
+lib/kpi-data.ts:502:    "id": "digital-mother-child-registry",
+lib/kpi-data.ts:503:    "commission": "raqam",
+lib/kpi-data.ts:507:    "source": "Qo‘shimcha raqamlashtirish mezoni"
+lib/kpi-data.ts:510:    "id": "digital-mother-child-analysis",
+lib/kpi-data.ts:511:    "commission": "raqam",
+lib/kpi-data.ts:515:    "source": "Qo‘shimcha raqamlashtirish mezoni"
+lib/password.ts:5:export function hashPassword(password: string) {
+lib/password.ts:7:  const hash = scryptSync(password, salt, KEY_LENGTH).toString("hex");
+lib/password.ts:11:export function verifyPassword(password: string, stored: string) {
+lib/password.ts:15:    const actual = scryptSync(password, salt, KEY_LENGTH);
+lib/client-upload.ts:1:export type UploadKind = "institution_order" | "institution_criterion" | "evaluator";
+lib/server-auth.ts:3:export type AppRole = "admin" | "evaluator" | "monitor" | "institution";
+app/api/kpi/route.ts:4:import { hashPassword } from "@/lib/password";
+app/api/kpi/route.ts:16:  password?: string;
+app/api/kpi/route.ts:37:      db.pool.query("SELECT institution_id AS \"institutionId\", round_day AS \"roundDay\", criterion_id AS \"criterionId\", score, note, evaluator_email AS \"evaluatorEmail\", evaluator_name AS \"evaluatorName\", updated_at AS \"updatedAt\" FROM evaluations ORDER BY updated_at DESC"),
+app/api/kpi/route.ts:50:    const allowedCriteria = session.role === "evaluator"
+app/api/kpi/route.ts:94:      const allowedCommission = session.role === "evaluator" ? session.commission : null;
+app/api/kpi/route.ts:120:            `INSERT INTO evaluations (institution_id, round_day, criterion_id, score, note, evaluator_email, evaluator_name, updated_at)
+app/api/kpi/route.ts:123:             DO UPDATE SET score = EXCLUDED.score, note = EXCLUDED.note, evaluator_email = EXCLUDED.evaluator_email,
+app/api/kpi/route.ts:124:               evaluator_name = EXCLUDED.evaluator_name, updated_at = NOW()`,
+app/api/kpi/route.ts:190:      const role = payload.role ?? "evaluator";
+app/api/kpi/route.ts:194:      if (!isValidLogin || !["admin", "evaluator", "monitor", "institution"].includes(role)) {
+app/api/kpi/route.ts:197:      if (role === "evaluator" && !commissions.some((item) => item.id === commission as CommissionKey)) {
+app/api/kpi/route.ts:204:      if (!existing.rowCount && !(payload.password?.trim())) {
+app/api/kpi/route.ts:207:      if (payload.password && payload.password.length < 6) {
+app/api/kpi/route.ts:210:      const passwordHash = payload.password ? hashPassword(payload.password) : null;
+app/api/kpi/route.ts:215:          if (passwordHash) {
+app/api/kpi/route.ts:217:              `UPDATE users SET name = $2, role = $3, commission = $4, active = $5, password_hash = $6, institution_id = $7, updated_at = NOW() WHERE email = $1`,
+app/api/kpi/route.ts:218:              [email, payload.name?.trim() ?? "", role, role === "evaluator" ? commission : "", payload.active === false ? 0 : 1, passwordHash, role === "institution" ? institutionId : ""],
+app/api/kpi/route.ts:223:              [email, payload.name?.trim() ?? "", role, role === "evaluator" ? commission : "", payload.active === false ? 0 : 1, role === "institution" ? institutionId : ""],
+app/api/kpi/route.ts:228:            `INSERT INTO users (email, name, role, commission, active, password_hash, institution_id) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+app/api/kpi/route.ts:229:            [email, payload.name?.trim() ?? "", role, role === "evaluator" ? commission : "", payload.active === false ? 0 : 1, passwordHash, role === "institution" ? institutionId : ""],
+app/api/auth/login/route.ts:3:import { verifyPassword } from "@/lib/password";
+app/api/auth/login/route.ts:9:    const body = (await request.json()) as { username?: string; password?: string };
+app/api/auth/login/route.ts:11:    const password = body.password ?? "";
+app/api/auth/login/route.ts:12:    if (!username || !password) {
+app/api/auth/login/route.ts:18:      "SELECT email, name, role, commission, active, password_hash FROM users WHERE email = $1 LIMIT 1",
+app/api/auth/login/route.ts:21:    const user = rows[0] as { email: string; name: string; role: string; commission: string; active: number; password_hash: string } | undefined;
+app/api/auth/login/route.ts:22:    if (!user || !user.active || !verifyPassword(password, user.password_hash)) {
+app/api/auth/login/route.ts:37:    const destination = user.role === "admin" ? "/admin" : user.role === "monitor" ? "/monitoring" : user.role === "institution" ? "/institution" : "/evaluator";
+app/api/files/route.ts:21:    if (session.role === "evaluator" && row.source !== "institution_order" && criterion?.commission !== session.commission) throw new AccessError("Bu faylni ko‘rish huquqi berilmagan.");
+app/api/uploads/complete/route.ts:9:  kind: "institution_order" | "institution_criterion" | "evaluator";
+app/api/uploads/complete/route.ts:124:         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'evaluator',$10)`,
+app/api/uploads/prepare/route.ts:11:type UploadKind = "institution_order" | "institution_criterion" | "evaluator";
+app/api/uploads/prepare/route.ts:54:    if (!( ["institution_order", "institution_criterion", "evaluator"] as string[]).includes(kind)) {
+app/api/uploads/prepare/route.ts:71:      if (!responsibleName || !responsiblePhone) return Response.json({ error: "Mas’ul F.I.Sh. va telefon raqamini kiriting." }, { status: 400 });
+app/api/uploads/prepare/route.ts:113:    if (kind === "evaluator") {
+app/api/uploads/prepare/route.ts:114:      if (session.role !== "admin" && session.role !== "evaluator") throw new AccessError("Bu amal baholovchi yoki administrator uchun.");
+app/api/uploads/prepare/route.ts:120:      if (session.role === "evaluator" && criterion.commission !== session.commission) throw new AccessError("Siz faqat biriktirilgan yo‘nalishga fayl yuklay olasiz.");
