@@ -41,6 +41,11 @@ const privateHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  experimental: {
+    // Next.js proxy defaults to 10 MB. Institution evidence files are allowed
+    // up to 30 MB, so keep a small margin for transport/proxy overhead.
+    proxyClientMaxBodySize: "32mb",
+  },
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
