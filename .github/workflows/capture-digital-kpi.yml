@@ -15,21 +15,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Restore and inspect application source
+      - name: Restore final application source
         shell: bash
         run: |
           set -e
-          node bootstrap.mjs
-          mkdir -p generated/source-inspect
-          cp lib/kpi-data.ts generated/source-inspect/kpi-data.txt
-          cp app/api/kpi/route.ts generated/source-inspect/api-kpi-route.txt
-          grep -RniE 'evaluator|raqam|digital|password|INSERT INTO users|daily_evaluations' netlify/database scripts lib app/api 2>/dev/null | head -n 2500 > generated/source-inspect/grep.txt || true
-      - name: Commit source inspection
+          npm run preinstall
+          mkdir -p generated/source-final
+          find app/api -type f -maxdepth 6 | sort > generated/source-final/api-files.txt
+          grep -RniE 'daily_evaluations|dailyEvaluations|evaluation_date' app/api components lib 2>/dev/null | head -n 3000 > generated/source-final/daily-grep.txt || true
+          cp app/api/kpi/route.ts generated/source-final/api-kpi-final.txt
+      - name: Commit final source inspection
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add generated/source-inspect
+          git add generated/source-final
           git diff --cached --quiet && exit 0
-          git commit -m 'Inspect KPI source for historical evaluation access'
+          git commit -m 'Inspect final KPI daily evaluation APIs'
           git push
