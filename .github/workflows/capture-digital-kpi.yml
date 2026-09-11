@@ -15,19 +15,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Capture report from production
+      - name: Restore source and export hierarchy
         shell: bash
         run: |
           set -e
+          npm run preinstall
           mkdir -p generated
-          curl -L --fail-with-body -sS 'https://buxoro-kpi-production.up.railway.app/api/reports/digital?date=2026-09-10' -o generated/raqamlashtirish-kpi-2026-09-10.svg
-          grep -q '<svg' generated/raqamlashtirish-kpi-2026-09-10.svg
-      - name: Commit report
+          cp lib/kpi-data.ts generated/kpi-data-final.txt
+      - name: Commit hierarchy source
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add generated/raqamlashtirish-kpi-2026-09-10.svg
+          git add generated/kpi-data-final.txt
           git diff --cached --quiet && exit 0
-          git commit -m 'Capture digital KPI report for 2026-09-10'
+          git commit -m 'Export KPI hierarchy source'
           git push
