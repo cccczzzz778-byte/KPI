@@ -15,5 +15,11 @@ s=s.slice(0,pos)+'{session.role !== "evaluator" && <KpiPeriodReports />}'+s.slic
 w('components/kpi-app.tsx',s)}
 `;
 source = source.slice(0, start) + replacement + source.slice(end);
+
+const excelOnlyPatch = fs.readFileSync('patch49.mjs', 'utf8');
+if (!source.includes('PATCH49_EXCEL_EXPORT_ONLY')) {
+  source += '\n\n' + excelOnlyPatch + '\n';
+}
+
 fs.writeFileSync(file, source, 'utf8');
-console.log('P48: adapted patch47 to render period reports in admin/monitor dashboard shell.');
+console.log('P48: adapted patch47 and injected Excel-only period report UI.');
