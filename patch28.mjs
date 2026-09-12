@@ -14,29 +14,3 @@ if (!css.includes(marker)) {
 } else {
   console.log('PATCH28: institution panel equal-width CSS already present.');
 }
-
-function dumpFile(file, patterns = []) {
-  if (!fs.existsSync(file)) {
-    console.log(`PATCH28-DASH-DIAG: missing ${file}`);
-    return;
-  }
-  const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/);
-  console.log(`PATCH28-DASH-DIAG-BEGIN ${file}`);
-  if (lines.length <= 260) {
-    lines.forEach((line, i) => console.log(`${i + 1}: ${line}`));
-  } else {
-    const hits = new Set();
-    for (let i = 0; i < lines.length; i++) {
-      if (patterns.some((p) => lines[i].toLowerCase().includes(p.toLowerCase()))) {
-        for (let j = Math.max(0, i - 10); j <= Math.min(lines.length - 1, i + 26); j++) hits.add(j);
-      }
-    }
-    [...hits].sort((a,b)=>a-b).forEach((i) => console.log(`${i + 1}: ${lines[i]}`));
-  }
-  console.log(`PATCH28-DASH-DIAG-END ${file}`);
-}
-
-dumpFile('app/api/dashboard/route.ts', ['evaluation', 'score', 'institution', 'round', 'daily', 'month']);
-dumpFile('components/kpi-app.tsx', ['dashboard', '/api/dashboard', 'DashboardPanel', 'totalScore', 'jami kpi', 'monitoring']);
-dumpFile('app/page.tsx', ['dashboard', 'KpiApp']);
-console.log('PATCH28-DASH-DIAG: dashboard daily/monthly investigation complete.');
