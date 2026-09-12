@@ -1,5 +1,3 @@
-import fs from 'node:fs';
-
 const componentPath = 'components/kpi-period-reports.tsx';
 const cssPath = 'app/globals.css';
 
