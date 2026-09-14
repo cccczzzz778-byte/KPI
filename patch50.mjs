@@ -9,6 +9,16 @@ function write(file, text) {
   console.log(`PATCH50: patched ${file}`);
 }
 
+// The restored source had an older 08:00-18:00 institution upload window in both UI and API.
+// Align every institution-facing legacy reference to the new 08:00-19:00 policy first.
+for (const file of ['app/api/uploads/prepare/route.ts', 'app/api/institution/route.ts', 'components/institution-portal.tsx']) {
+  let source = read(file);
+  source = source.replaceAll('08:00–18:00', '08:00–19:00');
+  source = source.replaceAll('08:00-18:00', '08:00-19:00');
+  source = source.replaceAll('"18:00"', '"19:00"');
+  write(file, source);
+}
+
 const helper = String.raw`function institutionUploadWindowOpen() {
   const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Asia/Tashkent",
@@ -74,5 +84,5 @@ const helper = String.raw`function institutionUploadWindowOpen() {
   write(file, source);
 }
 
-console.log('PATCH50: institution criterion uploads allowed only 08:00-19:00 Asia/Tashkent; recurrence rules remain in force.');
-console.log('PATCH50: evaluator/admin upload behavior is unchanged.');
+console.log('PATCH50: all institution upload UI/API windows aligned to 08:00-19:00 Asia/Tashkent.');
+console.log('PATCH50: recurrence rules remain in force; evaluator/admin upload behavior is unchanged.');
