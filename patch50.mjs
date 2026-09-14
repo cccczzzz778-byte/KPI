@@ -9,8 +9,7 @@ function write(file, text) {
   console.log(`PATCH50: patched ${file}`);
 }
 
-// The restored source had an older 08:00-18:00 institution upload window in both UI and API.
-// Align every institution-facing legacy reference to the new 08:00-19:00 policy first.
+// Align institution-facing upload times to 08:00-19:00.
 for (const file of ['app/api/uploads/prepare/route.ts', 'app/api/institution/route.ts', 'components/institution-portal.tsx']) {
   let source = read(file);
   source = source.replaceAll('08:00–18:00', '08:00–19:00');
@@ -34,7 +33,6 @@ const helper = String.raw`function institutionUploadWindowOpen() {
 
 `;
 
-// First gate: do not even create an institution criterion upload intent outside 08:00-19:00 Uzbekistan time.
 {
   const file = 'app/api/uploads/prepare/route.ts';
   let source = read(file);
@@ -58,7 +56,6 @@ const helper = String.raw`function institutionUploadWindowOpen() {
   write(file, source);
 }
 
-// Final gate: repeat the time-window check at completion so an upload started before 19:00 cannot be committed after closing time.
 {
   const file = 'app/api/uploads/complete/route.ts';
   let source = read(file);
@@ -84,5 +81,31 @@ const helper = String.raw`function institutionUploadWindowOpen() {
   write(file, source);
 }
 
-console.log('PATCH50: all institution upload UI/API windows aligned to 08:00-19:00 Asia/Tashkent.');
-console.log('PATCH50: recurrence rules remain in force; evaluator/admin upload behavior is unchanged.');
+// Re-enable the institution's built-in removal action for its own uploaded criterion files.
+{
+  const file = 'app/api/institution/submissions/route.ts';
+  let source = read(file);
+  const marker = '/* PATCH37_INSTITUTION_DELETE_BLOCK */';
+  const start = source.indexOf(marker);
+  if (start < 0) throw new Error('PATCH50: institution remove lock marker not found');
+  const lineStart = source.lastIndexOf('\n', start);
+  const returnEnd = source.indexOf(';', start);
+  if (lineStart < 0 || returnEnd < 0) throw new Error('PATCH50: institution remove lock block malformed');
+  source = source.slice(0, lineStart) + source.slice(returnEnd + 1);
+  write(file, source);
+}
+
+// The original manager already has the red removal button; patch37 only hid it.
+{
+  const file = 'app/globals.css';
+  let source = read(file);
+  const marker = '/* PATCH50_INSTITUTION_REMOVE_UI */';
+  if (!source.includes(marker)) {
+    source += `\n\n${marker}\n.criterion-file-manager__delete{display:inline-flex!important;align-items:center;justify-content:center;gap:6px}\n`;
+  }
+  write(file, source);
+}
+
+console.log('PATCH50: institution upload window = 08:00-19:00 Asia/Tashkent.');
+console.log('PATCH50: institution can remove its own uploaded criterion files from the existing manager.');
+console.log('PATCH50: recurrence rules remain active; BUYRUQ lock remains unchanged.');
