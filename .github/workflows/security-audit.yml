@@ -1,0 +1,33 @@
+name: Security audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'package.json'
+      - '.npmrc'
+      - '.github/workflows/security-audit.yml'
+  pull_request:
+    paths:
+      - 'package.json'
+      - '.npmrc'
+  schedule:
+    - cron: '20 2 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  runtime-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Build temporary lockfile without running project scripts
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
