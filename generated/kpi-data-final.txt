@@ -63,7 +63,7 @@ export const commissions = [
   {
     id: "birlamchi" as const,
     short: "Birlamchi yordam",
-    title: "Birlamchi tibbiy yordam — tuman va shahar tibbiyot birlashmalarida (OP va OSHP kesimida)",
+    title: "Birlamchi tibbiy yordam — tuman va shahar tibbiyot birlashmalarida",
     code: "02",
     color: "#0f9f7f",
   },
@@ -92,573 +92,548 @@ export const commissions = [
 
 export const criteria: Criterion[] = [
   {
-    "id": "p01-01",
-    "commission": "ijro",
-    "title": "“Kambag‘allikdan farovonlik sari” dasturi ijrosini nazorat qilish",
-    "detail": "“Kambag‘allikdan farovonlik sari” dasturi ijrosini ta’minlash;\nBunda, asosiy e’tibor “og‘ir” toifadagi mahallalarga qaratilishi, Qorako‘l tumanidagi “Chekirchi” MFYda ishlarni tashkil etish, viloyat va tuman darajasidagi rahbarlarning o‘ziga biriktirilgan 5 tadan kambag‘al oila holidan har oyda kamida 2 marta xabar olishi lozim.",
-    "deadline": "“Dolzarb 60 kunlik” doirasida",
-    "source": "Dastur 1-band"
-  },
-  {
-    "id": "p02-01",
-    "commission": "ijro",
-    "title": "“Og‘ir” mahallalarda sayyor qabullar tashkil etish",
-    "detail": "Hududiy tibbiyot birlashmalari rahbarlari “Og‘ir” toifadagi mahallalarda “Sayyor qabul”larni o‘tkazib, fuqarolarning tibbiyot sohasiga oid muammolarini vakolat doirasida qonuniy hal qilinishini ta’minlash;",
-    "deadline": "“Dolzarb 60 kunlik” doirasida",
-    "source": "Dastur 2-band"
-  },
-  {
     "id": "p02-02",
     "commission": "ijro",
-    "title": "Fuqaro murojaatlari xonasini belgilangan tartibda jihozlash",
-    "detail": "Tibbiyot muassasalaridagi “fuqaro murojaatlari” xonalarini belgilangan tartibda jihozlash, fuqarolar uchun qulay sharoit yaratish;",
+    "title": "Tibbiyot muassasalaridagi “fuqaro murojaatlari” xonalarini belgilangan tartibda jihozlash, fuqarolar uchun qulay sharoit yaratish.",
+    "detail": "2.2. Tibbiyot muassasalaridagi “fuqaro murojaatlari” xonalarini belgilangan tartibda jihozlash, fuqarolar uchun qulay sharoit yaratish.",
     "deadline": "1 hafta muddatda",
-    "source": "Dastur 2-band"
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p02-03",
     "commission": "ijro",
-    "title": "Fuqaro murojaatlarini tahlil qilish va ijobiy hal etish",
-    "detail": "Fuqaro murojaatlarini tahlil qilish, qonunda belgilangan tartibda imkon qadar ijobiy hal qilish choralarini ko‘rish hamda haftalik va oylik muhokamalarni o‘tkazib borish tizimini joriy qilish;",
+    "title": "Fuqaro murojaatlarini tahlil qilish, qonunda belgilangan tartibda imkon qadar ijobiy hal qilish choralarini ko‘rish hamda haftalik va oylik muhokamalarni o‘tkazib borish tizimini joriy qilish.",
+    "detail": "2.3. Fuqaro murojaatlarini tahlil qilish, qonunda belgilangan tartibda imkon qadar ijobiy hal qilish choralarini ko‘rish hamda haftalik va oylik muhokamalarni o‘tkazib borish tizimini joriy qilish.",
     "deadline": "Doimiy ravishda",
-    "source": "Dastur 2-band"
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p02-04",
     "commission": "ijro",
-    "title": "Ijro intizomi bo‘yicha kunlik monitoring yuritish",
-    "detail": "Ijro intizomiga qat’iy rioya qilish, kunlik monitoring tizimini yo‘lga qo‘yish.",
-    "deadline": "Muntazam",
-    "source": "Dastur 2-band"
+    "title": "Ijro intizomiga qat’iy rioya qilish, kunlik monitoring tizimini yo‘lga qo‘yish.",
+    "detail": "2.4. Ijro intizomiga qat’iy rioya qilish, kunlik monitoring tizimini yo‘lga qo‘yish.",
+    "deadline": "Muntazam ravishda",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
+  },
+  {
+    "id": "p04-04",
+    "commission": "ijro",
+    "title": "Muassasada shifokorlar faoliyatini baholash maqsadida maxsus QR-kodlar, ishonch telefonlari va murojaatlar qutilari orqali bemorlarning fikrlarini muntazam yig‘ib borish.",
+    "detail": "4.4. Muassasada shifokorlar faoliyatini baholash maqsadida maxsus QR-kodlar, ishonch telefonlari va murojaatlar qutilari orqali bemorlarning fikrlarini muntazam yig‘ib borish.",
+    "deadline": "Doimiy",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p06-01",
     "commission": "ijro",
-    "title": "Vakant shtat birliklarini xatlovdan o‘tkazish",
-    "detail": "Viloyat sog‘liqni saqlash boshqarmasi kadrlar bo‘limi va tuman (shahar) tibbiyot birlashmalari hamkorligida har bir shifoxona, oilaviy poliklinika va OSHP kesimidagi mavjud bo‘sh (vakant) shtat birliklarini to‘liq xatlovdan o‘tkazish;",
+    "title": "Viloyat sog‘liqni saqlash boshqarmasi kadrlar bo‘limi va tuman (shahar) tibbiyot birlashmalari hamkorligida har bir shifoxona, oilaviy poliklinika va OShP kesimidagi mavjud bo‘sh (vakant) shtat birliklarini to‘liq xatlovdan o‘tkazish.",
+    "detail": "6.1. Viloyat sog‘liqni saqlash boshqarmasi kadrlar bo‘limi va tuman (shahar) tibbiyot birlashmalari hamkorligida har bir shifoxona, oilaviy poliklinika va OShP kesimidagi mavjud bo‘sh (vakant) shtat birliklarini to‘liq xatlovdan o‘tkazish.",
     "deadline": "10 kunda",
-    "source": "Dastur 6-band"
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p06-02",
     "commission": "ijro",
-    "title": "0,25 / 0,5 / 0,75 stavkadagi xodimlarni tahlil qilish",
-    "detail": "Tibbiyot muassasalarida 0.25, 0.5 va 0.75 shtat birliklarida ishlayotgan xodimlarning ro‘yxatini shakllantirish, ularning ish joylari va mutaxassisliklari bo‘yicha yagona ma’lumotlar bazasini yaratish;",
+    "title": "Tibbiyot muassasalarida 0.25, 0.5 va 0.75 shtat birliklarida ishlayotgan xodimlarning ro‘yxatini shakllantirish, ularning ish joylari va mutaxassisliklari bo‘yicha yagona ma’lumotlar bazasini yaratish.",
+    "detail": "6.2. Tibbiyot muassasalarida 0.25, 0.5 va 0.75 shtat birliklarida ishlayotgan xodimlarning ro‘yxatini shakllantirish, ularning ish joylari va mutaxassisliklari bo‘yicha yagona ma’lumotlar bazasini yaratish.",
     "deadline": "1 oy muddatda",
-    "source": "Dastur 6-band"
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p06-03",
     "commission": "ijro",
-    "title": "Noto‘liq stavkalarni optimallashtirish va 1,0 stavka bilan ta’minlash",
-    "detail": "Xodimlarning bir nechta joyda noto‘liq stavkada ishlashi amaliyotini qisqartirib, asosiy ish joyida 1.0 stavka bilan ta’minlash orqali kadrlar qo‘nimsizligining oldini olish va tibbiy xizmat sifatini oshirish.",
+    "title": "Xodimlarning bir nechta joyda noto‘liq stavkada ishlashi amaliyotini qisqartirib, asosiy ish joyida 1.0 stavka bilan ta’minlash orqali kadrlar qo‘nimsizligining oldini olish va tibbiy xizmat sifatini oshirish.",
+    "detail": "6.3. Xodimlarning bir nechta joyda noto‘liq stavkada ishlashi amaliyotini qisqartirib, asosiy ish joyida 1.0 stavka bilan ta’minlash orqali kadrlar qo‘nimsizligining oldini olish va tibbiy xizmat sifatini oshirish.",
     "deadline": "60 kunlikda",
-    "source": "Dastur 6-band"
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
-    "id": "p10-04",
-    "commission": "ijro",
-    "title": "Favqulodda holatlar bo‘yicha tezkor va sutkalik hisobot topshirish",
-    "detail": "Favqulodda holatlar yuzasidan ko‘rsatilgan tibbiy xizmat to‘g‘risidagi tezkor xabarnomani zudlik bilan hamda sutkalik umumlashtirilgan ma’lumotlarni har kun soat 08:00 gacha boshqarmaga taqdim etib borish.",
-    "deadline": "Muntazam",
-    "source": "Dastur 10-band"
-  },
-  {
-    "id": "p12-03",
-    "commission": "ijro",
-    "title": "Davolash va sog‘lomlashtirish bo‘yicha kunlik hisobot topshirish",
-    "detail": "Davolash hamda sog‘lomlashtirish yuzasidan kunlik hisobotlarni boshqarmaning shtabiga topshirib borish.",
-    "deadline": "60 kunlik davomida",
-    "source": "Dastur 12-band"
-  },
-  {
-    "id": "p19-03",
-    "commission": "ijro",
-    "title": "Amalga oshirilgan ishlar bo‘yicha asoslangan oylik hisobot taqdim etish",
-    "detail": "Amalga oshirilgan ishlar bo‘yicha hisobotlarni asoslari bilan boshqarmaga taqdim etib borish.",
-    "deadline": "Har oyda 1 marta",
-    "source": "Dastur 19-band"
-  },
-  {
-    "id": "p20-01",
-    "commission": "ijro",
-    "title": "2026-yil 6 oylik ishlar hisoboti tahlili",
-    "detail": "2026-yilning 6 oylik amalga oshirilgan ishlari hisoboti tahlili;",
-    "deadline": "“Dolzarb 60 kunlik” doirasida",
-    "source": "Dastur 20-band"
-  },
-  {
-    "id": "p20-02",
-    "commission": "ijro",
-    "title": "Ustuvor vazifalar bo‘yicha strategik reja va yo‘l xaritasi",
-    "detail": "Kelgusida yil yakuniga qadar amalga oshiriladigan ustuvor vazifalar yuzasidan strategik rejalar taqdimoti va yo‘l xaritasini belgilash;",
-    "deadline": "“Dolzarb 60 kunlik” doirasida",
-    "source": "Dastur 20-band"
-  },
-  {
-    "id": "p20-03",
-    "commission": "ijro",
-    "title": "KPI asosida rahbarlar faoliyatini monitoring va baholash",
-    "detail": "Monitoring yuritish, KPI asosida rahbarlarni baholash hamda yakuniy xulosa yuzasidan sog‘liqni saqlash vazirligiga axborot kiritish.",
-    "deadline": "“Dolzarb 60 kunlik” doirasida",
-    "source": "Dastur 20-band"
+    "id": "p01-01",
+    "commission": "birlamchi",
+    "title": "“Kambag‘allikdan farovonlik sari” dasturi ijrosini ta’minlash. Bunda, asosiy e’tibor “og‘ir” toifadagi mahallalarga qaratilishi, Qorako‘l tumanidagi “Chekirchi” MFYda ishlarni tashkil etish, viloyat va tuman darajasidagi rahbarlarning o‘ziga biriktirilgan 5 tadan kambag‘al oila holidan har oyda kamida 2 marta xabar olishi lozim.",
+    "detail": "1.1. “Kambag‘allikdan farovonlik sari” dasturi ijrosini ta’minlash. Bunda, asosiy e’tibor “og‘ir” toifadagi mahallalarga qaratilishi, Qorako‘l tumanidagi “Chekirchi” MFYda ishlarni tashkil etish, viloyat va tuman darajasidagi rahbarlarning o‘ziga biriktirilgan 5 tadan kambag‘al oila holidan har oyda kamida 2 marta xabar olishi lozim.",
+    "deadline": "Haftada 1 marta",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p01-05",
     "commission": "birlamchi",
-    "title": "Skrining va patronaj orqali kasalliklarni erta aniqlash",
-    "detail": "Aholini skriningdan o‘tkazish, patronaj xizmati bilan qamrash orqali kasalliklarni erta aniqlash, sog‘lomlashtirish choralarini ko‘rish.",
-    "deadline": "“Dolzarb 60 kunlik” doirasida",
-    "source": "Dastur 1-band"
+    "title": "Aholini skriningdan o‘tkazish, patronaj xizmati bilan qamrash orqali kasalliklarni erta aniqlash, sog‘lomlashtirish choralarini ko‘rish.",
+    "detail": "1.5. Aholini skriningdan o‘tkazish, patronaj xizmati bilan qamrash orqali kasalliklarni erta aniqlash, sog‘lomlashtirish choralarini ko‘rish.",
+    "deadline": "Haftada 1 marta",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
+  },
+  {
+    "id": "p02-01",
+    "commission": "birlamchi",
+    "title": "Hududiy tibbiyot birlashmalari rahbarlari “Og‘ir” toifadagi mahallalarda “Sayyor qabul”larni o‘tkazib, fuqarolarning tibbiyot sohasiga oid muammolarini vakolat doirasida qonuniy hal qilinishini ta’minlash.",
+    "detail": "2.1. Hududiy tibbiyot birlashmalari rahbarlari “Og‘ir” toifadagi mahallalarda “Sayyor qabul”larni o‘tkazib, fuqarolarning tibbiyot sohasiga oid muammolarini vakolat doirasida qonuniy hal qilinishini ta’minlash.",
+    "deadline": "Haftada 1 marta",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
+  },
+  {
+    "id": "p04-05",
+    "commission": "birlamchi",
+    "title": "“Dolzarb 60 kunlik strategik o‘zgarishlar” davrida har bir tuman/shaharda kamida 10 ta yuqori texnologik jarrohlik amaliyotlari shaxsan G‘ijduvon tuman sog‘liqni saqlash bo‘limi, tuman va shahar tibbiyot birlashmalari rahbarlari tashabbusi bilan amalga oshirilishini ta’minlash.",
+    "detail": "4.5. “Dolzarb 60 kunlik strategik o‘zgarishlar” davrida har bir tuman/shaharda kamida 10 ta yuqori texnologik jarrohlik amaliyotlari shaxsan G‘ijduvon tuman sog‘liqni saqlash bo‘limi, tuman va shahar tibbiyot birlashmalari rahbarlari tashabbusi bilan amalga oshirilishini ta’minlash.",
+    "deadline": "Har oyda",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p05-01",
     "commission": "birlamchi",
-    "title": "40 yoshdan oshgan aholini yurak-qon tomir va diabet skriningidan o‘tkazish",
-    "detail": "Birlamchi bo‘g‘in (OSHP va OP) muassasalari orqali 40 yoshdan oshgan barcha aholi qatlami o‘rtasida arterial gipertoniya, qandli diabet va yurak ishemik kasalliklari xavf omillarini erta bosqichda aniqlash skriningini har oylik reja asosida o‘tkazish;",
+    "title": "Birlamchi bo‘g‘in (OShP va OP) muassasalari orqali 40 yoshdan oshgan barcha aholi qatlami o‘rtasida arterial gipertoniya, qandli diabet va yurak ishemik kasalliklari xavf omillarini erta bosqichda aniqlash skriningini har oylik reja asosida o‘tkazish.",
+    "detail": "5.1. Birlamchi bo‘g‘in (OShP va OP) muassasalari orqali 40 yoshdan oshgan barcha aholi qatlami o‘rtasida arterial gipertoniya, qandli diabet va yurak ishemik kasalliklari xavf omillarini erta bosqichda aniqlash skriningini har oylik reja asosida o‘tkazish.",
     "deadline": "Doimiy ravishda",
-    "source": "Dastur 5-band"
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p05-02",
     "commission": "birlamchi",
-    "title": "Sog‘lom turmush tarzi va yurak-qon tomir xavflari profilaktikasi",
-    "detail": "Aholi o‘rtasida sog‘lom turmush tarzini targ‘ib qilish, tuz, yog‘ iste’molini kamaytirish va o‘tkir yurak-qon tomir patologiyalarining birinchi belgilari sezilganda zudlik bilan “103” ga murojaat qilish zarurligi bo‘yicha keng qamrovli tushuntirish ishlarini olib borish;",
-    "deadline": "Muntazam",
-    "source": "Dastur 5-band"
+    "title": "Aholi o‘rtasida sog‘lom turmush tarzini targ‘ib qilish, tuz, yog‘ iste’molini kamaytirish va o‘tkir yurak-qon tomir patologiyalarining birinchi belgilari (nafas siqilishi, ko‘krak qafasida og‘riq, nutqning buzilishi) sezilganda zudlik bilan “103” ga murojaat qilish zarurligi bo‘yicha keng qamrovli tushuntirish ishlarini olib borish.",
+    "detail": "5.2. Aholi o‘rtasida sog‘lom turmush tarzini targ‘ib qilish, tuz, yog‘ iste’molini kamaytirish va o‘tkir yurak-qon tomir patologiyalarining birinchi belgilari (nafas siqilishi, ko‘krak qafasida og‘riq, nutqning buzilishi) sezilganda zudlik bilan “103” ga murojaat qilish zarurligi bo‘yicha keng qamrovli tushuntirish ishlarini olib borish.",
+    "deadline": "Muntazam ravishda",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p05-03",
     "commission": "birlamchi",
-    "title": "1-, 2- va 3-darajali klinikalar marshrutini tizimli yo‘lga qo‘yish",
-    "detail": "Olis hududlardan viloyat markaziga bog‘langan 1, 2 va 3-darajali klinikalar marshrutini to‘liq ishlab chiqish hamda tizimli faoliyatini yo‘lga qo‘yish.",
+    "title": "Olis hududlardan viloyat markazigacha bo‘lgan 1, 2 va 3-darajali klinikalar marshrutini to‘liq ishlab chiqish hamda tizimli faoliyatini yo‘lga qo‘yish.",
+    "detail": "5.3. Olis hududlardan viloyat markazigacha bo‘lgan 1, 2 va 3-darajali klinikalar marshrutini to‘liq ishlab chiqish hamda tizimli faoliyatini yo‘lga qo‘yish.",
     "deadline": "10 kunda",
-    "source": "Dastur 5-band"
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p07-01",
     "commission": "birlamchi",
-    "title": "Biriktirilgan aholi uchun dori va tibbiy buyumlarga ehtiyojni shakllantirish",
-    "detail": "Har bir OSHP, OP, KTMP va TTBda biriktirilgan aholi soni hamda kasallanish ko‘rsatkichlaridan kelib chiqqan holda, kafolatlangan paketga kiruvchi dori-darmonlar va tibbiy buyumlarga bo‘lgan oylik/choraklik ehtiyojini shakllantirish;",
+    "title": "Har bir OShP, OP, KTMP va TTBda biriktirilgan aholi soni hamda kasallanish ko‘rsatkichlaridan kelib chiqqan holda, kafolatlangan paketga kiruvchi dori-darmonlar va tibbiy buyumlarga bo‘lgan oylik/choraklik ehtiyojini shakllantirish.",
+    "detail": "7.1. Har bir OShP, OP, KTMP va TTBda biriktirilgan aholi soni hamda kasallanish ko‘rsatkichlaridan kelib chiqqan holda, kafolatlangan paketga kiruvchi dori-darmonlar va tibbiy buyumlarga bo‘lgan oylik/choraklik ehtiyojini shakllantirish.",
     "deadline": "1 haftada",
-    "source": "Dastur 7-band"
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p07-02",
     "commission": "birlamchi",
-    "title": "Dori vositalari sifati va yaroqlilik muddatini nazorat qilish",
-    "detail": "Xarid qilingan hamda markazlashgan tartibda keltirilgan dori vositalarini TTB/ShTB va poliklinikalariga qabul qilib olish, ularning yaroqlilik muddati va sifatini qat’iy nazoratga olish;",
+    "title": "Xarid qilingan hamda markazlashgan tartibda keltirilgan dori vositalarini TTB/ShTB va poliklinikalarga qabul qilib olish, ularning yaroqlilik muddati va sifatini qat’iy nazoratga olish.",
+    "detail": "7.2. Xarid qilingan hamda markazlashgan tartibda keltirilgan dori vositalarini TTB/ShTB va poliklinikalarga qabul qilib olish, ularning yaroqlilik muddati va sifatini qat’iy nazoratga olish.",
     "deadline": "Doimiy ravishda",
-    "source": "Dastur 7-band"
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p07-03",
     "commission": "birlamchi",
-    "title": "Kafolatlangan paket dorilarini belgilangan normativlar asosida yetkazish",
-    "detail": "Kafolatlangan paket doirasidagi dorilarni kunduzgi statsionarlar, shoshilinch yordam xonalari va oilaviy shifokorlarga belgilangan normativlar asosida o‘z vaqtida yetkazib berish choralarini ko‘rish.",
-    "deadline": "Muntazam",
-    "source": "Dastur 7-band"
+    "title": "Kafolatlangan paket doirasidagi dorilarni kunduzgi statsionarlar, shoshilinch yordam xonalari va oilaviy shifokorlarga belgilangan normativlar asosida o‘z vaqtida yetkazib berish choralarini ko‘rish.",
+    "detail": "7.3. Kafolatlangan paket doirasidagi dorilarni kunduzgi statsionarlar, shoshilinch yordam xonalari va oilaviy shifokorlarga belgilangan normativlar asosida o‘z vaqtida yetkazib berish choralarini ko‘rish.",
+    "deadline": "Muntazam ravishda",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p11-01",
     "commission": "birlamchi",
-    "title": "Sayyor chuqurlashtirilgan tibbiy ko‘riklarni tashkil etish",
-    "detail": "Viloyat bosh mutaxassislari ishtirokida tuman va shahar markazlarida keng qamrovli sayyor chuqurlashtirilgan tibbiy ko‘riklarni tashkil etish;",
+    "title": "Viloyat bosh mutaxassislari ishtirokida tuman va shahar markazlarida keng qamrovli sayyor chuqurlashtirilgan tibbiy ko‘riklarni tashkil etish.",
+    "detail": "11.1. Viloyat bosh mutaxassislari ishtirokida tuman va shahar markazlarida keng qamrovli sayyor chuqurlashtirilgan tibbiy ko‘riklarni tashkil etish.",
     "deadline": "10 kunda",
-    "source": "Dastur 11-band"
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p11-02",
     "commission": "birlamchi",
-    "title": "Sog‘lom ovqatlanish va profilaktik targ‘ibotni kuchaytirish",
-    "detail": "Aholi o‘rtasida noto‘g‘ri ovqatlanish, kamharakatlilik, tuz, qand va yog‘ni me’yoridan ortiq iste’mol qilish oqibatida kelib chiqadigan yurak-qon tomir, endokrin (qandli diabet) va boshqa yuqumli bo‘lmagan kasalliklarning oldini olish bo‘yicha targ‘ibotni kuchaytirish;",
-    "deadline": "60 kunlikda",
-    "source": "Dastur 11-band"
+    "title": "Aholi o‘rtasida noto‘g‘ri ovqatlanish, kamharakatlilik, tuz, qand va yog‘ni me’yoridan ortiq iste’mol qilish oqibatida kelib chiqadigan yurak-qon tomir, endokrin (qandli diabet) va boshqa yuqumli bo‘lmagan kasalliklarning oldini olish bo‘yicha targ‘ibot kuchaytirish.",
+    "detail": "11.2. Aholi o‘rtasida noto‘g‘ri ovqatlanish, kamharakatlilik, tuz, qand va yog‘ni me’yoridan ortiq iste’mol qilish oqibatida kelib chiqadigan yurak-qon tomir, endokrin (qandli diabet) va boshqa yuqumli bo‘lmagan kasalliklarning oldini olish bo‘yicha targ‘ibot kuchaytirish.",
+    "deadline": "Haftada 1 marta",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p11-03",
     "commission": "birlamchi",
-    "title": "“Besh ming qadam” sog‘lomlashtirish yo‘nalishlarini tashkil etish",
-    "detail": "Tuman va shahar markazlaridagi markaziy xiyobonlar, istirohat bog‘lari yoki piyodalar yo‘laklari bo‘ylab “Besh ming qadam” marafoni uchun qulay va xavfsiz masofaviy yo‘nalishlarni belgilash hamda keng jamoatchilikni jalb qilish;",
-    "deadline": "60 kunlik davomida",
-    "source": "Dastur 11-band"
+    "title": "Tuman va shahar markazlaridagi markaziy xiyobonlar, istirohat bog‘lari yoki piyodalar yo‘laklari bo‘ylab “Besh ming qadam” marafoni uchun qulay va xavfsiz masofaviy yo‘nalishlarni belgilash hamda keng jamoatchilikni jalb qilish.",
+    "detail": "11.3. Tuman va shahar markazlaridagi markaziy xiyobonlar, istirohat bog‘lari yoki piyodalar yo‘laklari bo‘ylab “Besh ming qadam” marafoni uchun qulay va xavfsiz masofaviy yo‘nalishlarni belgilash hamda keng jamoatchilikni jalb qilish.",
+    "deadline": "Haftada 1 marta",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p11-04",
     "commission": "birlamchi",
-    "title": "Aholi roziligini o‘rganish va ochiq muloqotlar o‘tkazish",
-    "detail": "Aholining tibbiy xizmatlardan roziligini ta’minlash, joylarda mavjud muammolar, murojaatlar va e’tirozlarni bevosita mahallalarda o‘rganish, shuningdek, tuman va shahar tibbiyot birlashmalari, markaziy poliklinikalar hamda oilaviy shifokorlik punktlari faoliyati yuzasidan fuqarolarning fikrlarini tinglash maqsadida ochiq muloqotlar tashkil etish.",
-    "deadline": "60 kunlik davomida",
-    "source": "Dastur 11-band"
+    "title": "Aholining tibbiy xizmatlardan roziligini ta’minlash, joylarda mavjud muammolar, murojaatlar va e’tirozlarni bevosita mahallalarda o‘rganish, shuningdek, tuman va shahar tibbiyot birlashmalari, markaziy poliklinikalar hamda oilaviy shifokorlik punktlari faoliyati yuzasidan fuqarolarning fikrlarini tinglash maqsadida ochiq muloqotlar tashkil etish.",
+    "detail": "11.4. Aholining tibbiy xizmatlardan roziligini ta’minlash, joylarda mavjud muammolar, murojaatlar va e’tirozlarni bevosita mahallalarda o‘rganish, shuningdek, tuman va shahar tibbiyot birlashmalari, markaziy poliklinikalar hamda oilaviy shifokorlik punktlari faoliyati yuzasidan fuqarolarning fikrlarini tinglash maqsadida ochiq muloqotlar tashkil etish.",
+    "deadline": "Haftada 1 marta",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p12-01",
     "commission": "birlamchi",
-    "title": "Ijtimoiy reestrdagi davolanish va jarrohlikka muhtoj bemorlar ro‘yxatini shakllantirish",
-    "detail": "Ijtimoiy reyestrdagi davolanishga va jarrohlik amaliyotiga muhtoj bemorlar qo‘shimcha ro‘yxatini shakllantirish;",
+    "title": "Ijtimoiy reyestridagi davolanishga va jarrohlik amaliyotiga muhtoj bemorlar qo‘shimcha ro‘yxatini shakllantirish.",
+    "detail": "12.1. Ijtimoiy reyestridagi davolanishga va jarrohlik amaliyotiga muhtoj bemorlar qo‘shimcha ro‘yxatini shakllantirish.",
     "deadline": "10 kunda",
-    "source": "Dastur 12-band"
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
-    "id": "p14-01",
+    "id": "p12-02",
     "commission": "birlamchi",
-    "title": "Kasallanish, o‘lim va nogironlik ko‘rsatkichlarini yaxshilash rejasini ishlab chiqish",
-    "detail": "Kasallanish, o‘lim va nogironlik ko‘rsatkichlarini yaxshilash bo‘yicha chora-tadbirlar rejasini ishlab chiqish:\n– Onalar o‘limi;\n– Go‘daklar o‘limi;\n– Nogironlik;\n– OITS bilan kasallanish;\n– Ruhiy-asab, narkologik, sil va onkologik kasalliklar bilan kasallanish;\n– Yuqumli kasalliklar;\n– Kardiologik va qandli diabet bilan kasallanish.",
-    "deadline": "10 kunda",
-    "source": "Dastur 14-band"
+    "title": "Viloyatda ajratilgan 671 ta kvota bo‘yicha shakllantirilgan ro‘yxat asosida operatsiyaga muhtoj bolalar, onkogematologik hamda jigar va buyrak transplantatsiyasiga muhtoj bemorlarni “vaucher” orqali shifoxalarga to‘liq yotqizib davolash choralarini ko‘rish.",
+    "detail": "12.2. Viloyatda ajratilgan 671 ta kvota bo‘yicha shakllantirilgan ro‘yxat asosida operatsiyaga muhtoj bolalar, onkogematologik hamda jigar va buyrak transplantatsiyasiga muhtoj bemorlarni “vaucher” orqali shifoxalarga to‘liq yotqizib davolash choralarini ko‘rish.",
+    "deadline": "Haftada 1 marta",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
+  },
+  {
+    "id": "p12-03",
+    "commission": "birlamchi",
+    "title": "Davolash hamda sog‘lomlashtirish yuzasidan kunlik hisobotlarni boshqarmaning shtabiga topshirib borish.",
+    "detail": "12.3. Davolash hamda sog‘lomlashtirish yuzasidan kunlik hisobotlarni boshqarmaning shtabiga topshirib borish.",
+    "deadline": "Haftada 1 marta",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p15-01",
     "commission": "birlamchi",
-    "title": "Hududlarga malakali kuratorlarni biriktirish",
-    "detail": "Aholiga ko‘rsatilayotgan xizmatlarni yaxshilash bo‘yicha viloyat davolash–profilaktika muassasalari, shahar va tuman tibbiyot birlashmalarining malakali mutaxassislarini hamda BuxDTI professor-o‘qituvchilarini kurator sifatida biriktirish;",
+    "title": "Aholiga ko‘rsatilayotgan xizmatlarni yaxshilash bo‘yicha viloyat davolash–profilaktika muassasalari, shahar va tuman tibbiyot birlashmalarining malakali mutaxassislarini hamda BuxDTI professor-o‘qituvchilarini kurator sifatida biriktirish.",
+    "detail": "15.1. Aholiga ko‘rsatilayotgan xizmatlarni yaxshilash bo‘yicha viloyat davolash–profilaktika muassasalari, shahar va tuman tibbiyot birlashmalarining malakali mutaxassislarini hamda BuxDTI professor-o‘qituvchilarini kurator sifatida biriktirish.",
     "deadline": "1 kun muddatda",
-    "source": "Dastur 15-band"
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p15-02",
     "commission": "birlamchi",
-    "title": "Kuratorlarning haftalik o‘rganishi va amaliy yordam tizimini yo‘lga qo‘yish",
-    "detail": "Mazkur kuratorlarning haftada bir marotaba savolnoma asosida hududlarda o‘rganish va amaliy yordam berib borish tizimini yo‘lga qo‘yish;",
+    "title": "Mazkur kuratorlarning haftada bir marotaba savolnoma asosida hududlarda o‘rganish va amaliy yordam berib borish tizimini yo‘lga qo‘yish.",
+    "detail": "15.2. Mazkur kuratorlarning haftada bir marotaba savolnoma asosida hududlarda o‘rganish va amaliy yordam berib borish tizimini yo‘lga qo‘yish.",
     "deadline": "Haftada 1 marta",
-    "source": "Dastur 15-band"
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p15-03",
     "commission": "birlamchi",
-    "title": "KTMP, OP, OSHP va mahalla kesimida ko‘rsatkichlarni tahlil qilish",
-    "detail": "Har oy yakuni bo‘yicha hududlarda KTMP, OP, OSHP va mahalla kesimida statistik ko‘rsatkichlarni tanqidiy muhokama qilib borish.",
+    "title": "Har oy yakuni bo‘yicha hududlarda KTMP, OP, OShP va mahalla kesimida statistik ko‘rsatkichlarni tanqidiy muhokama qilib borish.",
+    "detail": "15.3. Har oy yakuni bo‘yicha hududlarda KTMP, OP, OShP va mahalla kesimida statistik ko‘rsatkichlarni tanqidiy muhokama qilib borish.",
     "deadline": "Har oyda 1 marta",
-    "source": "Dastur 15-band"
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
+  },
+  {
+    "id": "p03-01",
+    "commission": "statsionar",
+    "title": "Barcha tibbiyot muassasalarida Doimiy faoliyatdagi hay’at (DFH) raislari rahbarligida dori vositalari va tibbiy buyumlar oylik, choraklik va yillik ehtiyojini shakllantirib, davlat xaridlari to‘g‘risidagi Qonun talablariga muvofiq xaridlarni amalga oshirish.",
+    "detail": "3.1. Barcha tibbiyot muassasalarida Doimiy faoliyatdagi hay’at (DFH) raislari rahbarligida dori vositalari va tibbiy buyumlar oylik, choraklik va yillik ehtiyojini shakllantirib, davlat xaridlari to‘g‘risidagi Qonun talablariga muvofiq xaridlarni amalga oshirish.",
+    "deadline": "Muntazam ravishda",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p03-02",
     "commission": "statsionar",
-    "title": "Shoshilinch tibbiy yordam uchun bazaviy dori va buyumlar ro‘yxatini yangilash",
-    "detail": "Har bir muassasa tomonidan Sog‘liqni saqlash vazirligi tomonidan tasdiqlangan bazaviy formulyar asosida shoshilinch tibbiy yordam uchun zarur bo‘lgan dori vositalari va tibbiy buyumlar ro‘yxatini qayta ko‘rib chiqish;",
+    "title": "Har bir muassasa tomonidan Sog‘liqni saqlash vazirligi tomonidan tasdiqlangan bazaviy formulary asosida shoshilinch tibbiy yordam uchun zarur bo‘lgan dori vositalari va tibbiy buyumlar ro‘yxatini qayta ko‘rib chiqish.",
+    "detail": "3.2. Har bir muassasa tomonidan Sog‘liqni saqlash vazirligi tomonidan tasdiqlangan bazaviy formulary asosida shoshilinch tibbiy yordam uchun zarur bo‘lgan dori vositalari va tibbiy buyumlar ro‘yxatini qayta ko‘rib chiqish.",
     "deadline": "1 hafta muddatda",
-    "source": "Dastur 3-band"
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p03-03",
     "commission": "statsionar",
-    "title": "Qabul, diagnostika va shok palatalarida zarur dori zaxirasini ta’minlash",
-    "detail": "Bo‘limlar kesimida ayniqsa, qabul va diagnostika bo‘limlari hamda shok palatalari uchun kunlik, haftalik va bir oylik o‘rtacha sarflanish ko‘rsatkichlaridan kelib chiqib, maksimal miqdorda zaxirasini tayyorlash.",
+    "title": "Bo‘limlar kesimida ayniqsa, qabul va diagnostika bo‘limlari hamda shok palatalari uchun kunlik, haftalik va bir oylik o‘rtacha sarflanish ko‘rsatkichlaridan kelib chiqib, maksimal miqdorda zaxirasini tayyorlash.",
+    "detail": "3.3. Bo‘limlar kesimida ayniqsa, qabul va diagnostika bo‘limlari hamda shok palatalari uchun kunlik, haftalik va bir oylik o‘rtacha sarflanish ko‘rsatkichlaridan kelib chiqib, maksimal miqdorda zaxirasini tayyorlash.",
     "deadline": "Doimiy ravishda",
-    "source": "Dastur 3-band"
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
+  },
+  {
+    "id": "p04-01",
+    "commission": "statsionar",
+    "title": "Har bir bo‘lim mudiri va shifokor ish stolida Sog‘liqni saqlash vazirligi tomonidan tasdiqlangan eng so‘nggi klinik protokollar hamda diagnostika va davolash standartlarining elektron yoki bosma nusxalari mavjudligini tekshirish va to‘liq ta’minlash.",
+    "detail": "4.1. Har bir bo‘lim mudiri va shifokor ish stolida Sog‘liqni saqlash vazirligi tomonidan tasdiqlangan eng so‘nggi klinik protokollar hamda diagnostika va davolash standartlarining elektron yoki bosma nusxalari mavjudligini tekshirish va to‘liq ta’minlash.",
+    "deadline": "Doimiy ravishda",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p04-02",
     "commission": "statsionar",
-    "title": "Tibbiy xizmat sifati va bemorlar xavfsizligi bo‘yicha ichki nazoratni kuchaytirish",
-    "detail": "Kasalxonalarda “Sifatni nazorat qilish va bemorlar xavfsizligi bo‘limi” (yoki ichki audit guruhi) faoliyatini jonlantirish hamda har bir bo‘lim uchun sifat koordinatorlarini tayinlash;",
+    "title": "Kaslxonalarda “Sifatni nazorat qilish va bemorlar xavfsizligi bo‘limi” (yoki ichki audit guruhi) faoliyatini jonlantirish hamda har bir bo‘lim uchun sifat koordinatorlarini tayinlash.",
+    "detail": "4.2. Kaslxonalarda “Sifatni nazorat qilish va bemorlar xavfsizligi bo‘limi” (yoki ichki audit guruhi) faoliyatini jonlantirish hamda har bir bo‘lim uchun sifat koordinatorlarini tayinlash.",
     "deadline": "10 kunda",
-    "source": "Dastur 4-band"
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
-    "id": "p04-05",
+    "id": "p04-03",
     "commission": "statsionar",
-    "title": "Hududlarda yuqori texnologik jarrohlik amaliyotlarini ko‘paytirish",
-    "detail": "“Dolzarb 60 kunlik strategik o‘zgarishlar” davrida har bir tuman/shaharda kamida 10 ta yuqori texnologik jarrohlik amaliyotlari amalga oshirilishini ta’minlash.",
-    "deadline": "Har oyda",
-    "source": "Dastur 4-band"
+    "title": "Og‘ir va kasalligi murakkab bemorlarni davolashda mahalliy shifokorlar ishtirokida muntazam ravishda telemeditsina orqali respublika/viloyat markazlari bilan maslahatlashuvlar (konsiliumlar) o‘tkazish amaliyotini kengaytirish.",
+    "detail": "4.3. Og‘ir va kasalligi murakkab bemorlarni davolashda mahalliy shifokorlar ishtirokida muntazam ravishda telemeditsina orqali respublika/viloyat markazlari bilan maslahatlashuvlar (konsiliumlar) o‘tkazish amaliyotini kengaytirish.",
+    "deadline": "Muntazam ravishda",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p09-01",
     "commission": "statsionar",
-    "title": "Ustuvor yuqori texnologik operatsiyalar yo‘nalishlarini aniqlash",
-    "detail": "Viloyatdagi DPMlar kesimida mahalliy sharoitda bajarilishi qiyin bo‘lgan yoki viloyat aholisi respublika/xorijga chiqib amalga oshiradigan eng dolzarb yuqori texnologik operatsiyalar yo‘nalishlarini tanlab olish.",
-    "deadline": "10 kunda / 60 kunlikda / 1 oyda / 60 kunlikda",
-    "source": "Dastur 9-band"
+    "title": "Viloyatdagi DPMlar kesimida mahalliy sharoitda bajarilishi qiyin bo‘lgan yoki viloyat aholisi respublika/xorijga chiqib amalga oshiradigan eng dolzarb yuqori texnologik operatsiyalar yo‘nalishlarini (neyroxirurgiya, kardioxirurgiya, endoprotezlash, laparoskopik va intervensional yo‘nalishlar) tanlab olish.",
+    "detail": "9.1. Viloyatdagi DPMlar kesimida mahalliy sharoitda bajarilishi qiyin bo‘lgan yoki viloyat aholisi respublika/xorijga chiqib amalga oshiradigan eng dolzarb yuqori texnologik operatsiyalar yo‘nalishlarini (neyroxirurgiya, kardioxirurgiya, endoprotezlash, laparoskopik va intervensional yo‘nalishlar) tanlab olish.",
+    "deadline": "10 kunda",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p09-02",
     "commission": "statsionar",
-    "title": "Murakkab operatsiyalarni mahalliy sharoitda bajarish ko‘lamini kengaytirish",
-    "detail": "Viloyatning o‘zida murakkab yuqori texnologik operatsiyalarni bajarish ko‘lamini keskin kengaytirish maqsadida mahalliy shifokorlarning kasbiy malakasini oshirish;",
-    "deadline": "10 kunda / 60 kunlikda / 1 oyda / 60 kunlikda",
-    "source": "Dastur 9-band"
+    "title": "Viloyatning o‘zida murakkab yuqori texnologik operatsiyalarni bajarish ko‘lamini keskin kengaytirish maqsadida mahalliy shifokorlarning kasbiy malakasini oshirish.",
+    "detail": "9.2. Viloyatning o‘zida murakkab yuqori texnologik operatsiyalarni bajarish ko‘lamini keskin kengaytirish maqsadida mahalliy shifokorlarning kasbiy malakasini oshirish.",
+    "deadline": "60 kunlikda",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p09-03",
     "commission": "statsionar",
-    "title": "Xorijiy yetakchi klinikalar bilan professional hamkorlikni yo‘lga qo‘yish",
-    "detail": "Xorijiy davlatlarning nufuzli klinikalari yetakchi mutaxassislari bilan muzokaralar olib borish, ularning viloyatga tashrif buyurish jadvalini kelishish;",
-    "deadline": "10 kunda / 60 kunlikda / 1 oyda / 60 kunlikda",
-    "source": "Dastur 9-band"
+    "title": "Xorijiy davlatlarning nufuzli klinikalari yetakchi mutaxassislari bilan muzokaralar olib borish, ularning viloyatga tashrif buyurish jadvalini kelishish.",
+    "detail": "9.3. Xorijiy davlatlarning nufuzli klinikalari yetakchi mutaxassislari bilan muzokaralar olib borish, ularning viloyatga tashrif buyurish jadvalini kelishish.",
+    "deadline": "1 oyda",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p09-04",
     "commission": "statsionar",
-    "title": "Xorijiy mutaxassislar bilan master-klass va qo‘shma operatsiyalar o‘tkazish",
-    "detail": "Yetakchi xorijiy mutaxassislar ishtirokida amaliy master-klasslar va qo‘shma jarrohliklar va amaliyotlar tashkil etish;",
-    "deadline": "10 kunda / 60 kunlikda / 1 oyda / 60 kunlikda",
-    "source": "Dastur 9-band"
+    "title": "Yetakchi xorijiy mutaxassislar ishtirokida amaliy master-klasslar va qo‘shma jarrohlatlar va amaliyotlar tashkil etish.",
+    "detail": "9.4. Yetakchi xorijiy mutaxassislar ishtirokida amaliy master-klasslar va qo‘shma jarrohlatlar va amaliyotlar tashkil etish.",
+    "deadline": "60 kunlikda",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p09-05",
     "commission": "statsionar",
-    "title": "Har bir muassasada yuqori texnologik operatsiyalarni tizimli yo‘lga qo‘yish",
-    "detail": "Har bir muassasa rahbari 10 tadan yuqori texnologik operatsiyalar amalga oshirilishini yo‘lga qo‘yish.",
-    "deadline": "10 kunda / 60 kunlikda / 1 oyda / 60 kunlikda",
-    "source": "Dastur 9-band"
+    "title": "Har bir muassasa rahbari 10 tadan yuqori texnologik operatsiyalar amalga oshirilishini yo‘lga qo‘yish.",
+    "detail": "9.5. Har bir muassasa rahbari 10 tadan yuqori texnologik operatsiyalar amalga oshirilishini yo‘lga qo‘yish.",
+    "deadline": "60 kunlikda",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p10-01",
     "commission": "statsionar",
-    "title": "Og‘ir politravmali bemorlarni Politravma markaziga tezkor yo‘naltirish",
-    "detail": "Tumanlardan kelib tushadigan og‘ir politravma bilan og‘rigan bemorlarni 103 xizmati orqali bevosita mas’ul Politravma markaziga kechiktirmasdan yetkazib berishning qat’iy marshrutini ishlab chiqish.",
+    "title": "Tumanlardan kelib tushadigan og‘ir politravma bilan og‘rigan bemorlarni 103 xizmati orqali bevosita mas’ul Politravma markaziga kechiktirmasdan yetkazib berishning qat’iy marshrutini ishlab chiqish.",
+    "detail": "10.1. Tumanlardan kelib tushadigan og‘ir politravma bilan og‘rigan bemorlarni 103 xizmati orqali bevosita mas’ul Politravma markaziga kechiktirmasdan yetkazib berishning qat’iy marshrutini ishlab chiqish.",
     "deadline": "10 kunda",
-    "source": "Dastur 10-band"
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p10-02",
     "commission": "statsionar",
-    "title": "24/7 faoliyat yurituvchi maxsus tibbiy brigadani tashkil etish",
-    "detail": "Markazlarda tunu kun (24/7) faoliyat yurituvchi travmatolog, neyroxirurg, reanimatolog, xirurg va qon-tomir xirurglaridan iborat doimiy tayyor maxsus tibbiy brigadalar faoliyatini kuchaytirish.",
+    "title": "Markazlarda tunu kun (24/7) faoliyat yurituvchi travmatolog, neyroxirurg, reanimatolog, xirurg va qon-tomir xirurglaridan iborat doimiy tayyor maxsus tibbiy brigadalar faoliyatini kuchaytirish.",
+    "detail": "10.2. Markazlarda tunu kun (24/7) faoliyat yurituvchi travmatolog, neyroxirurg, reanimatolog, xirurg va qon-tomir xirurglaridan iborat doimiy tayyor maxsus tibbiy brigadalar faoliyatini kuchaytirish.",
     "deadline": "60 kunlikda",
-    "source": "Dastur 10-band"
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
-    "id": "p12-02",
+    "id": "p10-03",
     "commission": "statsionar",
-    "title": "“VAQF” kvotalari bo‘yicha davolash, operatsiya va transplantatsiyani tashkil etish",
-    "detail": "Viloyatda ajratilgan 671 ta kvota bo‘yicha shakllantirilgan ro‘yxat asosida operatsiyaga muhtoj bolalar, onkogematologik hamda jigar va buyrak transplantatsiyasiga muhtoj bemorlarni “voucher” orqali shifoxonalarga to‘liq yotqizib davolash choralarini ko‘rish;",
-    "deadline": "60 kunlikda",
-    "source": "Dastur 12-band"
+    "title": "Mazkur holatlarda telemeditsina orqali malakali mutaxassislar maslahatini tashkil etish, zarur hollarda sanitariya aviatsiyasi xizmati orqali mutaxassislar maslahatini tashkil etish.",
+    "detail": "10.3. Mazkur holatlarda telemeditsina orqali malakali mutaxassislar maslahatini tashkil etish, zarur hollarda sanitariya aviatsiyasi xizmati orqali mutaxassislar maslahatini tashkil etish.",
+    "deadline": "Doimiy ravishda",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
+  },
+  {
+    "id": "p10-04",
+    "commission": "statsionar",
+    "title": "Favqulodda holatlar yuzasidan ko‘rsatilgan tibbiy xizmat to‘g‘risidagi tezkor xabarnomani zudlik bilan hamda sutkalik umumlashtirilgan ma’lumotlarni har kuni soat 08:00 gacha boshqarmaga taqdim etib borish.",
+    "detail": "10.4. Favqulodda holatlar yuzasidan ko‘rsatilgan tibbiy xizmat to‘g‘risidagi tezkor xabarnomani zudlik bilan hamda sutkalik umumlashtirilgan ma’lumotlarni har kuni soat 08:00 gacha boshqarmaga taqdim etib borish.",
+    "deadline": "Muntazam",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
+  },
+  {
+    "id": "p14-01",
+    "commission": "statsionar",
+    "title": "Kasallanish, o‘lim va nogironlik ko‘rsatkichlarini yaxshilash bo‘yicha chora-tadbirlar rejasini ishlab chiqish: Onalar o‘limi; Go‘daklar o‘limi; Nogironlik; OITS bilan kasallanish; Ruhiy-asab, narkologik, sil va onkologik kasalliklar bilan kasallanish; Yuqumli kasalliklar; Kardiologik va qandli diabet bilan kasallanish.",
+    "detail": "14.1. Kasallanish, o‘lim va nogironlik ko‘rsatkichlarini yaxshilash bo‘yicha chora-tadbirlar rejasini ishlab chiqish: Onalar o‘limi; Go‘daklar o‘limi; Nogironlik; OITS bilan kasallanish; Ruhiy-asab, narkologik, sil va onkologik kasalliklar bilan kasallanish; Yuqumli kasalliklar; Kardiologik va qandli diabet bilan kasallanish.",
+    "deadline": "10 kunda",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p03-04",
     "commission": "raqam",
-    "title": "Dori zaxirasini soat 08:00 va 17:00 da raqamli monitoring qilish",
-    "detail": "Har bir bo‘lim katta hamshirasi tomonidan har kuni soat 08:00 va 17:00 da shok palatasi va qabul bo‘limi zaxirasini monitoring qilish hamda maxsus elektron / qog‘oz jurnalda qayd qilib borish.",
-    "deadline": "Muntazam ravishda",
-    "source": "Dastur 3-band"
+    "title": "Har bir bo‘lim katta hamshirasi tomonidan har kuni soat 08:00 va 17:00 da shok palatasi va qabul bo‘limi zaxirasini monitoring qilish hamda maxsus elektron / qog‘oz jurnalda qayd qilib borish.",
+    "detail": "3.4. Har bir bo‘lim katta hamshirasi tomonidan har kuni soat 08:00 va 17:00 da shok palatasi va qabul bo‘limi zaxirasini monitoring qilish hamda maxsus elektron / qog‘oz jurnalda qayd qilib borish.",
+    "deadline": "Har kuni (doimiy)",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
-    "id": "p04-01",
+    "id": "p20-01",
     "commission": "raqam",
-    "title": "Klinik protokol va standartlarning elektron nusxalarini ta’minlash",
-    "detail": "Har bir bo‘lim mudiri va shifokor ish stolida Sog‘liqni saqlash vazirligi tomonidan tasdiqlangan eng so‘nggi klinik protokollar hamda diagnostika va davolash standartlarining elektron yoki bosma nusxalari mavjudligini tekshirish va to‘liq ta’minlash;",
-    "deadline": "Doimiy",
-    "source": "Dastur 4-band"
+    "title": "2026-yilning 6 oylik amalga oshirilgan ishlari hisoboti tahlili.",
+    "detail": "20.1. 2026-yilning 6 oylik amalga oshirilgan ishlari hisoboti tahlili.",
+    "deadline": "Dolzarb 60 kunlik doirasida",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
-    "id": "p04-03",
+    "id": "p20-02",
     "commission": "raqam",
-    "title": "Og‘ir bemorlar bo‘yicha telemeditsina konsiliumlarini tashkil etish",
-    "detail": "Og‘ir va kasalligi murakkab bemorlarni davolashda mahalliy shifokorlar ishtirokida muntazam ravishda telemeditsina orqali respublika/viloyat markazlari bilan maslahatlashuvlar (konsiliumlar) o‘tkazish amaliyotini kengaytirish;",
-    "deadline": "Muntazam ravishda",
-    "source": "Dastur 4-band"
+    "title": "Kelgusida yil yakuniga qadar amalga oshiriladigan ustuvor vazifalar yuzasidan strategik rejalar taqdimoti va yo‘l xaritasini belgilash.",
+    "detail": "20.2. Kelgusida yil yakuniga qadar amalga oshiriladigan ustuvor vazifalar yuzasidan strategik rejalar taqdimoti va yo‘l xaritasini belgilash.",
+    "deadline": "Dolzarb 60 kunlik doirasida",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
-    "id": "p04-04",
+    "id": "p20-03",
     "commission": "raqam",
-    "title": "QR-kod va ishonch telefoni orqali bemor fikrlarini elektron yig‘ish",
-    "detail": "Muassasada shifokorlar faoliyatini baholash maqsadida maxsus QR-kodlar, ishonch telefonlari va murojaatlar qutilari orqali bemorlarning fikrlarini muntazam yig‘ib borish;",
-    "deadline": "Doimiy",
-    "source": "Dastur 4-band"
-  },
-  {
-    "id": "p10-03",
-    "commission": "raqam",
-    "title": "Favqulodda holatlarda telemeditsina orqali mutaxassis maslahatini tashkil etish",
-    "detail": "Mazkur holatlarda telemeditsina orqali malakali mutaxassislar maslahatini tashkil etish, zarur hollarda sanitariya aviatsiyasi xizmati orqali mutaxassislar maslahatini tashkil etish;",
-    "deadline": "Doimiy ravishda",
-    "source": "Dastur 10-band"
+    "title": "Monitoring yuritish, KPI asosida rahbarlarni baholash hamda yakuniy xulosa yuzasidan sog‘liqni saqlash vazirligiga axborot kiritish.",
+    "detail": "20.3. Monitoring yuritish, KPI asosida rahbarlarni baholash hamda yakuniy xulosa yuzasidan sog‘liqni saqlash vazirligiga axborot kiritish.",
+    "deadline": "Dolzarb 60 kunlik doirasida",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p19-01",
     "commission": "raqam",
-    "title": "Profilaktika va zamonaviy tibbiyotni OAV hamda ijtimoiy tarmoqlarda yoritish",
-    "detail": "Ommaviy axborot vositalari orqali (televideniye, radio, gazeta, jurnal, ijtimoiy tarmoqlar) kasalliklar profilaktikasi, zamonaviy diagnostika va davolash hamda sog‘lom turmush tarzini targ‘ib qilish bo‘yicha media-rejalarni ishlab chiqish;",
+    "title": "Ommaviy axborot vositalari orqali (televideniye, radio, gazeta, jurnal, ijtimoiy tarmoqlar) kasalliklar profilaktikasi, zamonaviy diagnostika va davolash hamda sog‘lom turmush tarzini targ‘ib qilish bo‘yicha media-rejalarni ishlab chiqish.",
+    "detail": "19.1. Ommaviy axborot vositalari orqali (televideniye, radio, gazeta, jurnal, ijtimoiy tarmoqlar) kasalliklar profilaktikasi, zamonaviy diagnostika va davolash hamda sog‘lom turmush tarzini targ‘ib qilish bo‘yicha media-rejalarni ishlab chiqish.",
     "deadline": "10 kun muddatda",
-    "source": "Dastur 19-band"
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p19-02",
     "commission": "raqam",
-    "title": "Hamkor tashkilotlar bilan raqamli targ‘ibot ishlarini olib borish",
-    "detail": "Hamkor tashkilotlar (mahalla, yoshlar, xotin-qizlar, maktabgacha va maktab, oliy ta’lim, televideniye) bilan birgalikda kasalliklarni oldini olish va profilaktikasi bo‘yicha ommaviy axborot vositalari orqali keng yoritib borish;",
+    "title": "Hamkor tashkilotlar (mahalla, yoshlar, xotin-qizlar, maktabgacha va maktab, oliy ta’lim, televideniye) bilan birgalikda kasalliklarni oldini olish va profilaktikasi bo‘yicha ommaviy axborot vositalari (televideniye, radio, gazeta, jurnal, ijtimoiy tarmoqlar) orqali keng yoritib borish.",
+    "detail": "19.2. Hamkor tashkilotlar (mahalla, yoshlar, xotin-qizlar, maktabgacha va maktab, oliy ta’lim, televideniye) bilan birgalikda kasalliklarni oldini olish va profilaktikasi bo‘yicha ommaviy axborot vositalari (televideniye, radio, gazeta, jurnal, ijtimoiy tarmoqlar) orqali keng yoritib borish.",
     "deadline": "Haftada 1 marta",
-    "source": "Dastur 19-band"
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
-    "id": "digital-cash-monitoring",
+    "id": "p19-03",
     "commission": "raqam",
-    "title": "Kassa va pullik xizmatlar elektron monitoringi",
-    "detail": "Tibbiyot muassasalarida ko‘rsatilayotgan pullik xizmatlar, kassaga tushumlar, to‘lovlar va moliyaviy operatsiyalarni elektron tarzda doimiy monitoring qilib borish, tushumlarning shaffofligi va hisobdorligini ta’minlash.",
-    "deadline": "Doimiy",
-    "source": "Qo‘shimcha raqamlashtirish mezoni"
-  },
-  {
-    "id": "digital-camera-monitoring",
-    "commission": "raqam",
-    "title": "Videokuzatuv kameralarini markazlashgan monitoring qilish",
-    "detail": "Tibbiyot muassasalaridagi videokuzatuv kameralarining uzluksiz ishlashini nazorat qilish, qabul bo‘limlari, kirish-chiqish hududlari va muhim xizmat nuqtalarini markazlashgan tarzda kuzatib borish hamda aniqlangan texnik nosozliklarni o‘z vaqtida bartaraf etish.",
-    "deadline": "Doimiy",
-    "source": "Qo‘shimcha raqamlashtirish mezoni"
+    "title": "Amalga oshirilgan ishlar bo‘yicha hisobotlarni asoslari bilan boshqarmaga taqdim etib borish",
+    "detail": "19.3. Amalga oshirilgan ishlar bo‘yicha hisobotlarni asoslari bilan boshqarmaga taqdim etib borish",
+    "deadline": "Har oyda 1 marta",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "digital-mother-child-registry",
     "commission": "raqam",
-    "title": "“Ona va bola reestri” axborot tizimidan samarali foydalanish",
-    "detail": "Homilador ayollar, onalar va bolalarga oid ma’lumotlarni “Ona va bola reestri” axborot tizimiga o‘z vaqtida va to‘liq kiritish, ma’lumotlarning haqqoniyligini ta’minlash hamda xavf guruhidagi holatlarni elektron monitoring orqali nazorat qilib borish.",
-    "deadline": "Doimiy",
-    "source": "Qo‘shimcha raqamlashtirish mezoni"
+    "title": "Ona-bola restr tizimida malumorlar to`ldirilish bo`yicha nazorat",
+    "detail": "Ona-bola restr tizimida malumorlar to`ldirilish bo`yicha nazorat",
+    "deadline": "Har kuni (doimiy)",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
-    "id": "digital-mother-child-analysis",
+    "id": "digital-camera-monitoring",
     "commission": "raqam",
-    "title": "“Ona va bola reestri” orqali tahlil va nazoratni kuchaytirish",
-    "detail": "Tizimdagi ma’lumotlar asosida hududlar, muassasalar, OP va OSHP kesimida ko‘rsatkichlarni tahlil qilish, muammoli holatlarni aniqlash va rahbarlar tomonidan tezkor boshqaruv qarorlarini qabul qilishni ta’minlash.",
-    "deadline": "Doimiy",
-    "source": "Qo‘shimcha raqamlashtirish mezoni"
-  },
-  {
-    "id": "digital-daily-task-timeliness",
-    "commission": "raqam",
-    "title": "Kunlik berilgan vazifalarni o‘z vaqtida bajarish",
-    "detail": "Raqamlashtirish yo‘nalishi bo‘yicha kun davomida berilgan topshiriq va vazifalarni belgilangan muddatlarda sifatli bajarish, kechikishlarga yo‘l qo‘ymaslik hamda bajarilish holatini tezkor nazorat qilib borish.",
-    "deadline": "Har kuni / belgilangan muddatda",
-    "source": "Qo‘shimcha raqamlashtirish mezoni",
-    "requiresInstitutionFile": false
+    "title": "Videokuzatuv monitoringgi",
+    "detail": "Videokuzatuv monitoringgi",
+    "deadline": "Har kuni (doimiy)",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p01-02",
     "commission": "moliya",
-    "title": "Muassasa hududini obodonlashtirish va sanitariya holatini yaxshilash",
-    "detail": "Tibbiyot muassasalarida obodonlashtirish ishlarini tizimli ravishda olib borish, manzarali daraxtlar va gullar ekish, sanitariya holatini nazoratga olish;",
-    "deadline": "“Dolzarb 60 kunlik” doirasida",
-    "source": "Dastur 1-band"
+    "title": "Tibbiyot muassasalarida obodonlashtirish ishlarini tizimli ravishda olib borish, manzarali daraxtlar va gullar ekish, sanitariya holatini nazoratga olish.",
+    "detail": "1.2. Tibbiyot muassasalarida obodonlashtirish ishlarini tizimli ravishda olib borish, manzarali daraxtlar va gullar ekish, sanitariya holatini nazoratga olish.",
+    "deadline": "Haftada 1 marta",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p01-03",
     "commission": "moliya",
-    "title": "Xodimlar xonalari, devor va darvozalarni tartibga keltirish",
-    "detail": "Tibbiyot muassasalarida faoliyat yurituvchi ishchi-xodimlari xonalarida devor va darvozalarni tartibga keltirish, obodonlashtirilishini doimiy nazoratga olish;",
-    "deadline": "“Dolzarb 60 kunlik” doirasida",
-    "source": "Dastur 1-band"
+    "title": "Tibbiyot muassasalarida faoliyat yurituvchi ishchi-xodimlari xonadonlarida devor va darvozalarini tartibga keltirish, obodonlashtirilishini doimiy nazoratga olish.",
+    "detail": "1.3. Tibbiyot muassasalarida faoliyat yurituvchi ishchi-xodimlari xonadonlarida devor va darvozalarini tartibga keltirish, obodonlashtirilishini doimiy nazoratga olish.",
+    "deadline": "Haftada 1 marta",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p01-04",
     "commission": "moliya",
-    "title": "Mustaqillik bayramiga tashqi bezaklar va davlat bayrog‘ini joylashtirish",
-    "detail": "O‘zbekiston Respublikasi Mustaqilligining 35 yillik bayrami munosabati bilan shior aks ettirilgan bannerlar va davlat bayrog‘ini tibbiyot muassasalarining ko‘rinarli joyiga o‘rnatish hamda bayramni ko‘tarinki ruhda o‘tkazish;",
-    "deadline": "“Dolzarb 60 kunlik” doirasida",
-    "source": "Dastur 1-band"
-  },
-  {
-    "id": "p03-01",
-    "commission": "moliya",
-    "title": "Dori vositalari va tibbiy buyumlar xaridlarini ehtiyoj asosida rejalashtirish",
-    "detail": "Barcha tibbiyot muassasalarida Doimiy faoliyatdagi hay’at (DFH) raislari rahbarligida dori vositalari va tibbiy buyumlar oylik, choraklik va yillik ehtiyojini shakllantirib, davlat xaridlari to‘g‘risidagi Qonun talablariga muvofiq xaridlarni amalga oshirish;",
-    "deadline": "Muntazam ravishda",
-    "source": "Dastur 3-band"
+    "title": "O‘zbekiston Respublikasi Mustaqilligining 35 yillik bayrami munosabati bilan shior aks ettirilgan bannerlar va davlat bayrog‘ini tibbiyot muassasalarining ko‘rinarli joyiga o‘rnatish hamda bayramni ko‘tarinki ruhda o‘tkazish.",
+    "detail": "1.4. O‘zbekiston Respublikasi Mustaqilligining 35 yillik bayrami munosabati bilan shior aks ettirilgan bannerlar va davlat bayrog‘ini tibbiyot muassasalarining ko‘rinarli joyiga o‘rnatish hamda bayramni ko‘tarinki ruhda o‘tkazish.",
+    "deadline": "Dolzarb 60 kunlik doirasida",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p08-01",
     "commission": "moliya",
-    "title": "Qo‘shimcha pullik tibbiy xizmat turlarini kengaytirish",
-    "detail": "Viloyatdagi barcha davlat tibbiyot muassasalarida amaldagi qonunchilikka muvofiq, qo‘shimcha pullik tibbiy xizmatlar turlarini ko‘paytirish;",
-    "deadline": "1 haftada",
-    "source": "Dastur 8-band"
+    "title": "Viloyatdagi barcha davlat tibbiyot muassasalarida amaldagi qonunchilikka muvofiq, qo‘shimcha pullik tibbiy xizmatlar turlarini ko‘paytirish.",
+    "detail": "8.1. Viloyatdagi barcha davlat tibbiyot muassasalarida amaldagi qonunchilikka muvofiq, qo‘shimcha pullik tibbiy xizmatlar turlarini ko‘paytirish.",
+    "deadline": "Haftada 1 marta",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p08-02",
     "commission": "moliya",
-    "title": "Muassasaning moliyaviy mustaqilligi va barqarorligini ta’minlash",
-    "detail": "Tibbiyot muassasalarining moliyaviy mustaqilligi va barqarorligini ta’minlash;",
-    "deadline": "Doimiy ravishda",
-    "source": "Dastur 8-band"
+    "title": "Tibbiyot muassasalarining moliyaviy mustaqilligi va barqarorligini ta’minlash.",
+    "detail": "8.2. Tibbiyot muassasalarining moliyaviy mustaqilligi va barqarorligini ta’minlash.",
+    "deadline": "Haftada 1 marta",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p08-03",
     "commission": "moliya",
-    "title": "Aholi uchun zamonaviy va qulay servis sharoitlarini yaratish",
-    "detail": "Aholi uchun sifatli, zamonaviy va qulay servis sharoitlarini yaratish.",
-    "deadline": "Muntazam",
-    "source": "Dastur 8-band"
+    "title": "Aholi uchun sifatli, zamonaviy va qulay servis sharoitlarini yaratish.",
+    "detail": "8.3. Aholi uchun sifatli, zamonaviy va qulay servis sharoitlarini yaratish.",
+    "deadline": "Haftada 1 marta",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p08-04",
     "commission": "moliya",
-    "title": "Pullik tibbiy xizmatlar kalkulyatsiyasini qayta ko‘rib chiqish",
-    "detail": "Viloyat va tuman (shahar) darajasidagi tibbiyot muassasalarida pullik tibbiy xizmatlar kalkulyatsiyasini qayta ko‘rib chiqib, muvofiqlashtirish choralarini ko‘rish.",
+    "title": "Viloyat va tuman (shahar) darajasidagi tibbiyot muassasalarida pullik tibbiy xizmatlar kalkulyatsiyasini qayta ko‘rib chiqib, muvofiqlashtirish choralarini ko‘rish.",
+    "detail": "8.4. Viloyat va tuman (shahar) darajasidagi tibbiyot muassasalarida pullik tibbiy xizmatlar kalkulyatsiyasini qayta ko‘rib chiqib, muvofiqlashtirish choralarini ko‘rish.",
     "deadline": "10 kun muddatda",
-    "source": "Dastur 8-band"
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p16-01",
     "commission": "moliya",
-    "title": "Muassasa infratuzilmasi va sanitariya holatini to‘liq xatlovdan o‘tkazish",
-    "detail": "Muassasalarning kirish darvozalari, yo‘laklar, bordyurlar, daraxtlar, palatalar va sanitariya uzellarining bugungi holatini birma-bir ko‘zdan kechirib, amaliy ishlar ko‘lamini aniqlash.",
-    "deadline": "Doimiy",
-    "source": "Dastur 16-band"
+    "title": "Muassasalarining kirish darvozalari, yo‘laklar, bordyurlar, daraxtlar, palatalar va sanitariya uzellarining bugungi holatini birma-bir ko‘zdan kechirib, amaliy ishlar ko‘lamini aniqlash.",
+    "detail": "16.1. Muassasalarining kirish darvozalari, yo‘laklar, bordyurlar, daraxtlar, palatalar va sanitariya uzellarining bugungi holatini birma-bir ko‘zdan kechirib, amaliy ishlar ko‘lamini aniqlash.",
+    "deadline": "Haftada 1 marta",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p16-02",
     "commission": "moliya",
-    "title": "Ta’mirlash, sanitariya va yotoq jihozlariga ehtiyojni aniqlash",
-    "detail": "Oqlash va bo‘yash materiallari, standart shiorlar va bannerlar, zarur sanitariya jihozlari (sovutgich, suyuq sovun, dezinfeksiya vositalari) hamda yotoq jihozlari (choyshab, matras, krovat) bo‘yicha ehtiyojlarni hisoblab chiqish va ta’minlash manbalarini belgilash.",
-    "deadline": "Doimiy",
-    "source": "Dastur 16-band"
+    "title": "Oqlash va bo‘yash materiallari, standart shiorlar va bannerlar, zarur sanitariya jihozlari (sovutgich, suyuq sovun, dezinfeksiya vositalari) hamda yotoq jihozlari (choyshab, matras, krovat) bo‘yicha ehtiyojlarni hisoblab chiqish va ta’minlash manbalarini belgilash.",
+    "detail": "16.2. Oqlash va bo‘yash materiallari, standart shiorlar va bannerlar, zarur sanitariya jihozlari (sovutgich, suyuq sovun, dezinfeksiya vositalari) hamda yotoq jihozlari (choyshab, matras, krovat) bo‘yicha ehtiyojlarni hisoblab chiqish va ta’minlash manbalarini belgilash.",
+    "deadline": "Haftada 1 marta",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p17-01",
     "commission": "moliya",
-    "title": "PF-88 asosida loyiha-smeta hujjatlari tayyorlanishini nazorat qilish",
-    "detail": "O‘zbekiston Respublikasi Prezidentining 2025-yil 19-maydagi PF-88-son Farmoni asosida tibbiyot muassasalarining loyiha-smeta hujjatlari tayyorlanishini nazorat qilish;",
-    "deadline": "Belgilangan muddatda / Ikkinchi yarim yillik",
-    "source": "Dastur 17-band"
+    "title": "O‘zbekiston Respublikasi Prezidentining 2025-yil 19-maydagi PF-88-son Farmoni asosida tibbiyot muassasalarining loyiha-smeta hujjatlari tayyorlanishini nazorat qilish.",
+    "detail": "17.1. O‘zbekiston Respublikasi Prezidentining 2025-yil 19-maydagi PF-88-son Farmoni asosida tibbiyot muassasalarining loyiha-smeta hujjatlari tayyorlanishini nazorat qilish.",
+    "deadline": "Haftada 1 marta",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p17-02",
     "commission": "moliya",
-    "title": "Qurilish-ta’mirlash ishlarining sifatini nazorat qilish",
-    "detail": "80 ta tibbiyot muassasalarida olib borilayotgan qurilish-ta’mirlash ishlarining sifatli olib borilishini qat’iy nazoratga olish.",
-    "deadline": "Belgilangan muddatda / Ikkinchi yarim yillik",
-    "source": "Dastur 17-band"
+    "title": "80 ta tibbiyot muassasalarida olib borilayotgan qurilish-ta’mirlash ishlarining sifatli olib borilishini qat’iy nazoratga olish.",
+    "detail": "17.2. 80 ta tibbiyot muassasalarida olib borilayotgan qurilish-ta’mirlash ishlarining sifatli olib borilishini qat’iy nazoratga olish.",
+    "deadline": "Haftada 1 marta",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p17-03",
     "commission": "moliya",
-    "title": "Yangi muassasalarni tibbiy jihozlar bilan ta’minlash choralarini ko‘rish",
-    "detail": "Yangi qurilib, foydalanishga topshirilayotgan muassasalarni tibbiy jihozlar bilan ta’minlash uchun belgilangan tartibda Sog‘liqni saqlash vazirligiga taklif kiritish.",
-    "deadline": "Belgilangan muddatda / Ikkinchi yarim yillik",
-    "source": "Dastur 17-band"
+    "title": "Yangi qurilib, foydalanishga topshirilayotgan muassasalarni tibbiy jihozlar bilan ta’minlash uchun belgilangan tartibda Sog‘liqni saqlash vazirligiga taklif kiritish.",
+    "detail": "17.3. Yangi qurilib, foydalanishga topshirilayotgan muassasalarni tibbiy jihozlar bilan ta’minlash uchun belgilangan tartibda Sog‘liqni saqlash vazirligiga taklif kiritish.",
+    "deadline": "Ikkinchi yarim yillik",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p18-01",
     "commission": "moliya",
-    "title": "2026–2027-yillar kuz-qish mavsumiga tayyorgarlik rejasini ishlab chiqish",
-    "detail": "Har bir muassasa kesimida tibbiyot muassasalarini 2026-2027-yillar kuz-qish mavsumiga tayyorlash bo‘yicha chora-tadbirlar rejasi ishlab chiqish va tasdiqlash;",
-    "deadline": "“Dolzarb 60 kunlik” doirasida",
-    "source": "Dastur 18-band"
+    "title": "Har bir muassasa kesimida tibbiyot muassasalarini 2026-2027-yillar kuz-qish mavsumiga tayyorlash bo‘yicha chora-tadbirlar rejasi ishlab chiqish va tasdiqlash.",
+    "detail": "18.1. Har bir muassasa kesimida tibbiyot muassasalarini 2026-2027-yillar kuz-qish mavsumiga tayyorlash bo‘yicha chora-tadbirlar rejasi ishlab chiqish va tasdiqlash.",
+    "deadline": "Dolzarb 60 kunlik doirasida",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p18-02",
     "commission": "moliya",
-    "title": "Moliyalashtirish manbalari, ijro muddatlari va mas’ullarni belgilash",
-    "detail": "Rejada har bir obyekt bo‘yicha bajariladigan ishlar, ularning moliyalashtirish manbalari, ijro muddatlari va mas’ul shaxslar aniq belgilash;",
-    "deadline": "“Dolzarb 60 kunlik” doirasida",
-    "source": "Dastur 18-band"
+    "title": "Rejada har bir obyekt bo‘yicha bajariladigan ishlar, ularning moliyalashtirish manbalari, ijro muddatlari va mas’ul shaxslar aniq belgilash.",
+    "detail": "18.2. Rejada har bir obyekt bo‘yicha bajariladigan ishlar, ularning moliyalashtirish manbalari, ijro muddatlari va mas’ul shaxslar aniq belgilash.",
+    "deadline": "Dolzarb 60 kunlik doirasida",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p18-03",
     "commission": "moliya",
-    "title": "Qozonxona va isitish qozonlarini ta’mirlash hamda sinovdan o‘tkazish",
-    "detail": "Barcha qozonxonalar va isitish qozonlarini rejali ta’mirdan chiqarish, sinovdan o‘tkazish va texnik pasportlarini rasmiylashtirish;",
-    "deadline": "“Dolzarb 60 kunlik” doirasida",
-    "source": "Dastur 18-band"
+    "title": "Barcha qozonxonalar va isitish qozonlarini rejali ta’mirdan chiqarish, sinovdan o‘tkazish va texnik pasportlarini rasmiylashtirish.",
+    "detail": "18.3. Barcha qozonxonalar va isitish qozonlarini rejali ta’mirdan chiqarish, sinovdan o‘tkazish va texnik pasportlarini rasmiylashtirish.",
+    "deadline": "Haftada 1 marta",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
     "id": "p18-04",
     "commission": "moliya",
-    "title": "Ko‘mir yoqilg‘isi zaxirasini yaratish va nazorat qilish",
-    "detail": "Tibbiyot muassasalarida 2026-2027-yillar kuz-qish mavsumi uchun zarur bo‘lgan ko‘mir yoqilg‘i zaxiralarini yaratish va belgilangan tartibda sarflanishi va saqlanishini nazorat qilib borish.",
-    "deadline": "“Dolzarb 60 kunlik” doirasida",
-    "source": "Dastur 18-band"
+    "title": "Tibbiyot muassasalariga 2026-2027-yillar kuz-qish mavsumi uchun zarur bo‘lgan ko‘mir yoqilg‘i zaxiralarini yaratish va belgilangan tartibda sarflanishi va saqlanishini nazorat qilib borish.",
+    "detail": "18.4. Tibbiyot muassasalariga 2026-2027-yillar kuz-qish mavsumi uchun zarur bo‘lgan ko‘mir yoqilg‘i zaxiralarini yaratish va belgilangan tartibda sarflanishi va saqlanishini nazorat qilib borish.",
+    "deadline": "Haftada 1 marta",
+    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   }
 ];
 
