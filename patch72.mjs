@@ -17,7 +17,8 @@ write("app/api/reports/monitoring-scores/route.ts","import ExcelJS from \"excelj
   }
   if(!s.includes("<MonitoringCenter />")){
     const matches=(s.match(/<KpiPeriodReports \/>/g)||[]).length;
-    if(matches<1) throw new Error("PATCH72 KpiPeriodReports anchor missing");\n    console.log("PATCH72: KpiPeriodReports anchors found:",matches);
+    if(matches<1) throw new Error("PATCH72 KpiPeriodReports anchor missing");
+    console.log("PATCH72: KpiPeriodReports anchors found:",matches);
     s=s.replaceAll("<KpiPeriodReports />","<><KpiPeriodReports /><MonitoringCenter /></>");
   }
   write(file,s);
