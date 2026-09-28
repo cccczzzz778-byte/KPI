@@ -16,7 +16,7 @@ function write(file,source){const i=file.lastIndexOf("/");if(i>=0)fs.mkdirSync(f
   if(!s.includes(marker)){
     const occurrences=(s.match(/<KpiPeriodReports \/>/g)||[]).length;
     if(occurrences<1) throw new Error("PATCH73 KpiPeriodReports anchor missing");
-    s=s.replaceAll("<KpiPeriodReports />",marker+"<KpiPeriodReports />");
+    s=s.replaceAll("<KpiPeriodReports />","<>"+marker+"<KpiPeriodReports /></>");
   }
   write(file,s);
 }
