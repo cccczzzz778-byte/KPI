@@ -27,11 +27,13 @@ function ensureHook(source,hook){const re=/import\s*\{([^}]*)\}\s*from\s*["\']re
  const file="app/api/kpi/route.ts";let s=read(file);
  if(!s.includes("isInstitutionCommissionExcluded")){const a='import { getKpiDatabase } from "@/lib/netlify-db";';if(!s.includes(a))throw new Error("PATCH80C kpi import anchor");s=s.replace(a,a+'\nimport { isInstitutionCommissionExcluded } from "@/lib/institution-applicability";')}
  if(!s.includes("PATCH80C_EVALUATOR_GUARD")){
-  const v='      if (!institutionId || !rounds.includes(roundDay as (typeof rounds)[number])) {\n        return Response.json({ error: "Muassasa yoki baholash davri noto\\\'g\\\'ri." }, { status: 400 });\n      }';
-  let anchor=v;
-  if(!s.includes(anchor)){anchor='      if (!institutionId || !rounds.includes(roundDay as (typeof rounds)[number])) {\n        return Response.json({ error: "Muassasa yoki baholash davri noto\'g\'ri." }, { status: 400 });\n      }'}
-  if(!s.includes(anchor))throw new Error("PATCH80C save guard anchor");
-  s=s.replace(anchor,anchor+'\n      /* PATCH80C_EVALUATOR_GUARD */\n      if (session.role === "evaluator" && allowedCommission && await isInstitutionCommissionExcluded(institutionId, allowedCommission)) {\n        throw new AccessError("Bu bo‘lim ushbu muassasaga tatbiq etilmaydi.", 403);\n      }');
+  const anchor='      const entries = Object.entries(scoreMap);';
+  if(!s.includes(anchor))throw new Error("PATCH80C entries anchor");
+  const guard=['      /* PATCH80C_EVALUATOR_GUARD */',
+    '      if (session.role === "evaluator" && allowedCommission && await isInstitutionCommissionExcluded(institutionId, allowedCommission)) {',
+    '        throw new AccessError("Bu bo‘lim ushbu muassasaga tatbiq etilmaydi.", 403);',
+    '      }'].join("\n");
+  s=s.replace(anchor,guard+"\n"+anchor);
  }
  write(file,s);
 }
