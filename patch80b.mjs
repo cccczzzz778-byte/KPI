@@ -1,0 +1,35 @@
+import fs from "node:fs";
+function read(file){if(!fs.existsSync(file))throw new Error("PATCH80B missing "+file);return fs.readFileSync(file,"utf8")}
+function write(file,source){const i=file.lastIndexOf("/");if(i>=0)fs.mkdirSync(file.slice(0,i),{recursive:true});fs.writeFileSync(file,source,"utf8");console.log("PATCH80B: "+file)}
+write("components/admin-institution-applicability.tsx",[
+  '"use client";',
+  'import { useEffect,useMemo,useState } from "react";',
+  'import { CheckCircle2,RefreshCw,Search,ShieldOff } from "lucide-react";',
+  'type Institution={id:string;name:string;district?:string;type?:string;active?:number};',
+  'type Exclusion={institutionId:string;commission:string};',
+  'const dirs=[["ijro","Ijro"],["birlamchi","Birlamchi"],["statsionar","Statsionar"],["raqam","Raqam"],["moliya","Moliya"]] as const;',
+  'export default function AdminInstitutionApplicability(){',
+  ' const [institutions,setInstitutions]=useState<Institution[]>([]),[exclusions,setExclusions]=useState<Exclusion[]>([]),[query,setQuery]=useState(""),[busy,setBusy]=useState(""),[error,setError]=useState("");',
+  ' async function load(){try{setError("");const [a,b]=await Promise.all([fetch("/api/admin/institutions",{cache:"no-store"}),fetch("/api/applicability",{cache:"no-store"})]);const aj=await a.json(),bj=await b.json();if(!a.ok)throw new Error(aj.error||"Muassasalar yuklanmadi.");if(!b.ok)throw new Error(bj.error||"Tatbiq holati yuklanmadi.");setInstitutions(Array.isArray(aj.institutions)?aj.institutions:[]);setExclusions(Array.isArray(bj.exclusions)?bj.exclusions:[])}catch(e){setError(e instanceof Error?e.message:"Xatolik")}}',
+  ' useEffect(()=>{void load()},[]);',
+  ' const excluded=useMemo(()=>new Set(exclusions.map(x=>x.institutionId+"::"+x.commission)),[exclusions]);',
+  ' const rows=useMemo(()=>{const q=query.trim().toLocaleLowerCase("uz");return institutions.filter(x=>x.active!==0).filter(x=>!q||[x.name,x.district,x.type,x.id].some(v=>String(v||"").toLocaleLowerCase("uz").includes(q))).sort((a,b)=>a.name.localeCompare(b.name,"uz"))},[institutions,query]);',
+  ' async function toggle(id:string,commission:string){const key=id+"::"+commission,isExcluded=excluded.has(key);setBusy(key);setError("");try{const r=await fetch("/api/applicability",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({institutionId:id,commission,applicable:isExcluded})});const j=await r.json();if(!r.ok)throw new Error(j.error||"Saqlanmadi.");setExclusions(p=>isExcluded?p.filter(x=>!(x.institutionId===id&&x.commission===commission)):[...p,{institutionId:id,commission}])}catch(e){setError(e instanceof Error?e.message:"Saqlanmadi.")}finally{setBusy("")}}',
+  ' return <section className="applicability-admin"><div className="applicability-head"><div><span>MUASSASA × BO‘LIM</span><h3>Tatbiq etilmaydigan bo‘limlar</h3><p>N/A qilingan bo‘limning baholovchisiga ushbu muassasa ko‘rinmaydi.</p></div><button type="button" onClick={()=>void load()}><RefreshCw size={14}/>Yangilash</button></div>',
+  ' <div className="applicability-search"><Search size={14}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Muassasa qidirish..."/></div>{error&&<div className="applicability-error">{error}</div>}',
+  ' <div className="applicability-table-wrap"><table><thead><tr><th>Muassasa</th>{dirs.map(d=><th key={d[0]}>{d[1]}</th>)}</tr></thead><tbody>{rows.map(inst=><tr key={inst.id}><td><strong>{inst.name}</strong><small>{[inst.district,inst.type].filter(Boolean).join(" · ")||inst.id}</small></td>{dirs.map(d=>{const key=inst.id+"::"+d[0],na=excluded.has(key);return <td key={d[0]}><button type="button" disabled={busy===key} className={na?"na":"yes"} onClick={()=>void toggle(inst.id,d[0])}>{na?<><ShieldOff size={13}/>N/A</>:<><CheckCircle2 size={13}/>Amal qiladi</>}</button></td>})}</tr>)}</tbody></table></div></section>',
+  '}',
+  ''
+].join("\n"));
+{
+ const file="components/kpi-app.tsx";let s=read(file);
+ if(!s.includes("AdminInstitutionApplicability")){const a='import AdminSystemControl from "@/components/admin-system-control";';if(!s.includes(a))throw new Error("PATCH80B import anchor");s=s.replace(a,a+'\nimport AdminInstitutionApplicability from "@/components/admin-institution-applicability";')}
+ const b='<AdminInstitutionManager onChanged={onRefresh} />';if(!s.includes("<AdminInstitutionApplicability />")){if(!s.includes(b))throw new Error("PATCH80B manager anchor");s=s.replace(b,b+'\n<AdminInstitutionApplicability />')}
+ write(file,s);
+}
+{
+ const file="app/globals.css";let s=read(file);
+ if(!s.includes("PATCH80B_APPLICABILITY_UI"))s+='\n/* PATCH80B_APPLICABILITY_UI */\n.applicability-admin{margin:14px 0 18px;border:1px solid #d9e7eb;border-radius:16px;background:#fff;overflow:hidden}.applicability-head{display:flex;justify-content:space-between;gap:12px;padding:14px 15px;background:#f7fbfb;border-bottom:1px solid #e5edef}.applicability-head>div{display:grid;gap:3px}.applicability-head span{font-size:9px;font-weight:900;letter-spacing:.12em;color:#0f766e}.applicability-head h3{margin:0;font-size:16px;color:#17324d}.applicability-head p{margin:0;font-size:10px;color:#718293}.applicability-head button{display:flex;align-items:center;gap:5px;height:34px;border:1px solid #cfe2df;border-radius:9px;background:#fff;color:#0f766e;font-size:10px;font-weight:800}.applicability-search{display:flex;gap:7px;align-items:center;margin:11px 13px;padding:8px 10px;border:1px solid #dce7eb;border-radius:9px}.applicability-search input{width:100%;border:0;outline:0;background:transparent;font-size:11px}.applicability-error{margin:0 13px 10px;padding:8px;background:#fff0f0;color:#a53636;border-radius:8px;font-size:10px}.applicability-table-wrap{max-height:520px;overflow:auto}.applicability-admin table{width:100%;border-collapse:collapse;min-width:850px}.applicability-admin th{position:sticky;top:0;background:#f6f9fa;padding:8px;font-size:9px;color:#617488;z-index:1}.applicability-admin th:first-child{text-align:left;min-width:300px}.applicability-admin td{padding:7px 8px;text-align:center;border-top:1px solid #edf2f4}.applicability-admin td:first-child{text-align:left}.applicability-admin td strong{display:block;font-size:10px;color:#203950}.applicability-admin td small{display:block;font-size:8px;color:#8795a3}.applicability-admin td button{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-width:88px;padding:6px 8px;border-radius:999px;font-size:9px;font-weight:800}.applicability-admin td button.yes{border:1px solid #bfe7d8;background:#eefaf6;color:#0f8066}.applicability-admin td button.na{border:1px solid #f1c7c7;background:#fff1f1;color:#b33e3e}@media(max-width:760px){.applicability-head{flex-direction:column}}\n';
+ write(file,s);
+}
+console.log("PATCH80B: admin applicability matrix added");
