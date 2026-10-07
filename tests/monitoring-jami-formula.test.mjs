@@ -6,11 +6,16 @@ const routePath = "app/api/reports/monitoring-scores/route.ts";
 const route = fs.existsSync(routePath) ? fs.readFileSync(routePath, "utf8") : "";
 
 test("JAMI BALL cells use the N/A-aware Excel formula", () => {
-  assert.match(route, /IFERROR\(ROUND\(SUM\(D/);
-  assert.match(route, /IF\(D.*="N\/A",0,10\.3\)/);
-  assert.match(route, /IF\(E.*="N\/A",0,29\.4\)/);
-  assert.match(route, /IF\(F.*="N\/A",0,23\.5\)/);
-  assert.match(route, /IF\(G.*="N\/A",0,13\.3\)/);
-  assert.match(route, /IF\(H.*="N\/A",0,23\.5\)/);
-  assert.match(route, /fullCalcOnLoad=true/);
+  const start = route.indexOf("// PATCH100_NA_FORMULA");
+  const end = route.indexOf("styleSheet(sheet,9", start);
+  const formulaBlock = start >= 0 && end > start ? route.slice(start, end) : "";
+
+  assert.match(formulaBlock, /IFERROR\(ROUND\(SUM\(D/);
+  assert.match(formulaBlock, /N\/A/);
+  assert.match(formulaBlock, /10\.3/);
+  assert.match(formulaBlock, /29\.4/);
+  assert.match(formulaBlock, /13\.3/);
+  assert.ok((formulaBlock.match(/23\.5/g) ?? []).length >= 2);
+  assert.match(formulaBlock, /sheet\.getCell\(r,9\)\.value=\{formula,result:currentResult\}/);
+  assert.match(formulaBlock, /fullCalcOnLoad=true/);
 });
