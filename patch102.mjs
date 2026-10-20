@@ -4,23 +4,11 @@ const file = "app/api/dashboard/route.ts";
 if (!fs.existsSync(file)) throw new Error("PATCH102: dashboard route missing");
 let source = fs.readFileSync(file, "utf8");
 
-const from = `          \`SELECT institution_id AS "institutionId",
-                  criterion_id AS "criterionId",
-                  AVG(LEAST(2, GREATEST(0, score)))::float8 AS score
-             FROM daily_evaluations
-            WHERE evaluation_date <= $1::date
-            GROUP BY institution_id, criterion_id\`,`;
-
-const to = `          \`SELECT DISTINCT ON (institution_id, criterion_id)
-                  institution_id AS "institutionId",
-                  criterion_id AS "criterionId",
-                  LEAST(2, GREATEST(0, score))::float8 AS score
-             FROM daily_evaluations
-            WHERE evaluation_date <= $1::date
-            ORDER BY institution_id, criterion_id, evaluation_date DESC, updated_at DESC\`,`;
+const from = 'AVG(LEAST(2, GREATEST(0, score)))::float8 AS score';
+const to = '(ARRAY_AGG(LEAST(2, GREATEST(0, score)) ORDER BY evaluation_date DESC, updated_at DESC))[1]::float8 AS score';
 
 if (!source.includes(from)) {
-  throw new Error("PATCH102: Jami dashboard historical-average query anchor missing");
+  throw new Error("PATCH102: dashboard Jami AVG expression anchor missing");
 }
 source = source.replace(from, to);
 fs.writeFileSync(file, source, "utf8");
