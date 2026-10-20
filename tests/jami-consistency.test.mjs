@@ -15,8 +15,14 @@ const comparisonRoute = read("app/api/period-comparison/route.ts");
 const averageSql = /AVG\(LEAST\(2\s*,\s*GREATEST\(0\s*,\s*score\)\)\)::float8 AS score/i;
 const summedDailySql = /SUM\(LEAST\(2\s*,\s*GREATEST\(0\s*,\s*score\)\)\)::float8 AS score/i;
 
-test("Jami hisoblari kunlik ballarni 0..2 oralig‘ida o‘rtachalaydi", () => {
-  assert.match(publicRoute, averageSql);
+test("Dashboard Jami har mezonning eng so‘nggi saqlangan 0..2 ballini oladi", () => {
+  assert.match(publicRoute, /SELECT DISTINCT ON \(institution_id, criterion_id\)/i);
+  assert.match(publicRoute, /LEAST\(2\s*,\s*GREATEST\(0\s*,\s*score\)\)\)::float8 AS score/i);
+  assert.match(publicRoute, /ORDER BY institution_id, criterion_id, evaluation_date DESC, updated_at DESC/i);
+  assert.doesNotMatch(publicRoute, averageSql);
+});
+
+test("Davriy Jami hisobotlari kunlik ballarni 0..2 oralig‘ida o‘rtachalaydi", () => {
   assert.match(periodRoute, averageSql);
   assert.match(monitoringRoute, averageSql);
   assert.match(comparisonRoute, averageSql);
