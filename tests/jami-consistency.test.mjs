@@ -12,22 +12,28 @@ const periodRoute = read("app/api/reports/kpi-period/route.ts");
 const monitoringRoute = read("app/api/reports/monitoring-scores/route.ts");
 const comparisonRoute = read("app/api/period-comparison/route.ts");
 
+const latestSql = /ARRAY_AGG\(LEAST\(2\s*,\s*GREATEST\(0\s*,\s*score\)\)\s+ORDER BY evaluation_date DESC\s*,\s*updated_at DESC\)\)\[1\]::float8 AS score/i;
 const averageSql = /AVG\(LEAST\(2\s*,\s*GREATEST\(0\s*,\s*score\)\)\)::float8 AS score/i;
 const summedDailySql = /SUM\(LEAST\(2\s*,\s*GREATEST\(0\s*,\s*score\)\)\)::float8 AS score/i;
 
 test("Dashboard Jami har mezonning eng so‘nggi saqlangan 0..2 ballini oladi", () => {
-  assert.match(publicRoute, /ARRAY_AGG\(LEAST\(2\s*,\s*GREATEST\(0\s*,\s*score\)\)\s+ORDER BY evaluation_date DESC\s*,\s*updated_at DESC\)\)\[1\]::float8 AS score/i);
+  assert.match(publicRoute, latestSql);
   assert.doesNotMatch(publicRoute, averageSql);
 });
 
-test("Davriy Jami hisobotlari kunlik ballarni 0..2 oralig‘ida o‘rtachalaydi", () => {
-  assert.match(periodRoute, averageSql);
-  assert.match(monitoringRoute, averageSql);
-  assert.match(comparisonRoute, averageSql);
+test("Monitoring, jamlanma va hisobotlarda ham eng so‘nggi mezon bali ishlatiladi", () => {
+  assert.match(periodRoute, latestSql);
+  assert.match(monitoringRoute, latestSql);
+  assert.match(comparisonRoute, latestSql);
+  assert.doesNotMatch(periodRoute, averageSql);
+  assert.doesNotMatch(monitoringRoute, averageSql);
+  assert.doesNotMatch(comparisonRoute, averageSql);
 });
 
 test("Jami hisobida kunlik ballar SUM qilinmaydi", () => {
   assert.doesNotMatch(periodRoute, summedDailySql);
+  assert.doesNotMatch(monitoringRoute, summedDailySql);
+  assert.doesNotMatch(comparisonRoute, summedDailySql);
 });
 
 test("KPI davriy hisobotida alohida uncapped scoreMonthly formulasi yo‘q", () => {
