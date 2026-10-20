@@ -16,9 +16,7 @@ const averageSql = /AVG\(LEAST\(2\s*,\s*GREATEST\(0\s*,\s*score\)\)\)::float8 AS
 const summedDailySql = /SUM\(LEAST\(2\s*,\s*GREATEST\(0\s*,\s*score\)\)\)::float8 AS score/i;
 
 test("Dashboard Jami har mezonning eng so‘nggi saqlangan 0..2 ballini oladi", () => {
-  assert.match(publicRoute, /SELECT DISTINCT ON \(institution_id, criterion_id\)/i);
-  assert.match(publicRoute, /LEAST\(2\s*,\s*GREATEST\(0\s*,\s*score\)\)\)::float8 AS score/i);
-  assert.match(publicRoute, /ORDER BY institution_id, criterion_id, evaluation_date DESC, updated_at DESC/i);
+  assert.match(publicRoute, /ARRAY_AGG\(LEAST\(2\s*,\s*GREATEST\(0\s*,\s*score\)\)\s+ORDER BY evaluation_date DESC\s*,\s*updated_at DESC\)\)\[1\]::float8 AS score/i);
   assert.doesNotMatch(publicRoute, averageSql);
 });
 
