@@ -34,3 +34,5 @@ if (!ui.includes('INSTITUTION_DASHBOARD_BLOCKED')) {
 
 fs.writeFileSync(uiFile, ui, "utf8");
 console.log("PATCH105: institution accounts are blocked from Dashboard and redirected to /institution.");
+
+await import("./patch106.mjs");
