@@ -1,0 +1,99 @@
+import { criteria } from "@/lib/kpi-data";
+import { getKpiDatabase } from "@/lib/netlify-db";
+import { AccessError, accessErrorResponse, requireAppUser } from "@/lib/server-auth";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+const MONTHS: Record<string, [string, string]> = {
+  "2026-09": ["2000-01-01", "2026-10-04"],
+  "2026-10": ["2026-10-05", "2026-10-31"],
+};
+const allowed = new Set(criteria.map(c => c.id));
+function bounds(month: string) {
+  if (!Object.prototype.hasOwnProperty.call(MONTHS, month)) throw new AccessError("Faqat 2026-yil sentabr va oktabr oylarini tanlang.", 400);
+  return MONTHS[month];
+}
+async function admin(request: Request) {
+  const session = await requireAppUser(request);
+  if (session.role !== "admin") throw new AccessError("Faqat administrator tarixiy baholarni o‘zgartirishi mumkin.", 403);
+  return session;
+}
+export async function GET(request: Request) {
+  try {
+    await admin(request);
+    const u = new URL(request.url);
+    const month = u.searchParams.get("month") || "2026-10";
+    const [start, end] = bounds(month);
+    const institutionId = u.searchParams.get("institutionId") || "";
+    const db = getKpiDatabase();
+    const institutions = await db.pool.query("SELECT id,name,district FROM institutions WHERE active=1 ORDER BY name");
+    const validId = institutions.rows.some(row => String(row.id) === institutionId);
+    const evaluations = validId ? await db.pool.query(
+      'SELECT criterion_id AS "criterionId", TO_CHAR(evaluation_date,\'YYYY-MM-DD\') AS "date",score,note,evaluator_email AS "evaluatorEmail",updated_at AS "updatedAt" FROM daily_evaluations WHERE institution_id=$1 AND evaluation_date BETWEEN $2::date AND $3::date ORDER BY evaluation_date DESC,criterion_id',
+      [institutionId, start, end]
+    ) : { rows: [] };
+    return Response.json({
+      month, institutions: institutions.rows,
+      criteria: criteria.map(c => ({ id: c.id, title: c.title, commission: c.commission })),
+      evaluations: evaluations.rows,
+    }, { headers: { "cache-control": "no-store" } });
+  } catch (error) { return accessErrorResponse(error); }
+}
+export async function PATCH(request: Request) {
+  let client: Awaited<ReturnType<ReturnType<typeof getKpiDatabase>["pool"]["connect"]>> | undefined;
+  try {
+    const session = await admin(request);
+    const body = await request.json();
+    const institutionId = String(body.institutionId || "");
+    const criterionId = String(body.criterionId || "");
+    const month = String(body.month || "");
+    const date = String(body.date || "");
+    const reason = String(body.reason || "").trim();
+    const note = String(body.note ?? "");
+    const score = Number(body.score);
+    const [start, end] = bounds(month);
+    if (!allowed.has(criterionId)) throw new AccessError("Mezon mavjud emas.", 400);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date < start || date > end) throw new AccessError("Tanlangan sana hisobot oyiga mos emas.", 400);
+    if (!Number.isInteger(score) || score < 0 || score > 2) throw new AccessError("Ball 0, 1 yoki 2 bo‘lishi kerak.", 400);
+    if (reason.length < 5 || reason.length > 1000) throw new AccessError("Tuzatish sababini kamida 5 belgi bilan kiriting.", 400);
+    if (note.length > 3000) throw new AccessError("Izoh juda uzun.", 400);
+    const db = getKpiDatabase();
+    client = await db.pool.connect();
+    await client.query("BEGIN");
+    const inst = await client.query("SELECT id FROM institutions WHERE id=$1 AND active=1", [institutionId]);
+    if (!inst.rowCount) throw new AccessError("Muassasa topilmadi.", 404);
+    const old = await client.query(
+      "SELECT score,note FROM daily_evaluations WHERE institution_id=$1 AND criterion_id=$2 AND evaluation_date=$3::date FOR UPDATE",
+      [institutionId, criterionId, date]
+    );
+    if (!old.rowCount) throw new AccessError("Bu sana va mezon bo‘yicha eski baho mavjud emas. Faqat mavjud baholarni tahrirlash mumkin.", 404);
+    await client.query(`CREATE TABLE IF NOT EXISTS admin_historical_score_audit (
+      id BIGSERIAL PRIMARY KEY,
+      institution_id TEXT NOT NULL,
+      criterion_id TEXT NOT NULL,
+      evaluation_date DATE NOT NULL,
+      old_score INTEGER NOT NULL,
+      new_score INTEGER NOT NULL,
+      old_note TEXT NOT NULL DEFAULT '',
+      new_note TEXT NOT NULL DEFAULT '',
+      reason TEXT NOT NULL,
+      admin_email TEXT NOT NULL,
+      changed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`);
+    const oldRow = old.rows[0];
+    await client.query(
+      "UPDATE daily_evaluations SET score=$4,note=$5,updated_at=NOW(),evaluator_email=$6,evaluator_name=$7 WHERE institution_id=$1 AND criterion_id=$2 AND evaluation_date=$3::date",
+      [institutionId, criterionId, date, score, note, String(session.email || "admin"), "Administrator"]
+    );
+    await client.query(
+      "INSERT INTO admin_historical_score_audit(institution_id,criterion_id,evaluation_date,old_score,new_score,old_note,new_note,reason,admin_email) VALUES($1,$2,$3::date,$4,$5,$6,$7,$8,$9)",
+      [institutionId, criterionId, date, Number(oldRow.score), score, String(oldRow.note || ""), note, reason, String(session.email || "admin")]
+    );
+    await client.query("COMMIT");
+    return Response.json({ success: true, previousScore: Number(oldRow.score), score, month, date }, { headers: { "cache-control": "no-store" } });
+  } catch (error) {
+    if (client) await client.query("ROLLBACK").catch(() => undefined);
+    return accessErrorResponse(error);
+  } finally { client?.release(); }
+}
