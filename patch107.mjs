@@ -5,7 +5,7 @@ let s = fs.readFileSync(file, "utf8");
 const tag = "PATCH107_QORAKOL_ADMIN_RANK";
 if (!s.includes(tag)) {
   const oldRows = "const topRows = useMemo(() => data?.rows.slice(0, 12) ?? [], [data]);";
-  const newRows = 'const topRows = useMemo(() => data?.rows ?? [], [data]);\n  // PATCH107_QORAKOL_ADMIN_RANK: administrative rank is separate from calculated scores.\n  const isQorakol = (row: Row) => /qorak[o‘’\\\x27]?l|karakul|корак[оa]л|қорак[оa]л/i.test(row.name + " " + row.district);';
+  const newRows = 'const topRows = useMemo(() => data?.rows ?? [], [data]);\\n  // PATCH107_QORAKOL_ADMIN_RANK: administrative rank is separate from calculated scores.\\n  const isQorakol = (row: Row) => /qorako.?l|qorakol|karakul|коракол|қорақол|қоракўл/i.test(row.name + " " + row.district);';
   if (!s.includes(oldRows)) throw new Error("PATCH107: row anchor missing");
   s = s.replace(oldRows, newRows);
   const oldHeader = "<th>Dinamika</th></tr></thead>";
