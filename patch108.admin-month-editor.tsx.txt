@@ -70,6 +70,6 @@ export function AdminMonthEditor({ onChanged }: { onChanged?: () => void }) {
     {institutionId&&!dates.length&&<p style={{marginTop:12}}>Tanlangan oyda saqlangan baho topilmadi.</p>}
     {error&&<p role="alert" style={{color:"#b91c1c",marginTop:12}}>{error}</p>}
     {message&&<p role="status" style={{color:"#047857",marginTop:12}}>{message}</p>}
-    <button type="button" style={{...button,marginTop:14,opacity:!current||busy||reason.trim().length<5?.5:1}} disabled={!current||busy||reason.trim().length<5} onClick={()=>void save()}>{busy?"Saqlanmoqda...":"Bahoni saqlash"}</button>
+    <button type="button" style={{...button,marginTop:14,opacity:(!current || busy || reason.trim().length < 5) ? 0.5 : 1}} disabled={!current||busy||reason.trim().length<5} onClick={()=>void save()}>{busy?"Saqlanmoqda...":"Bahoni saqlash"}</button>
   </section>;
 }
