@@ -41,7 +41,7 @@ export async function GET(request: Request) {
   } catch (error) { return accessErrorResponse(error); }
 }
 export async function PATCH(request: Request) {
-  let client: Awaited<ReturnType<ReturnType<typeof getKpiDatabase>["pool"]["connect"]>> | undefined;
+  let client: any;
   try {
     const session = await admin(request);
     const body = await request.json();
