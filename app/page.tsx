@@ -5,9 +5,9 @@ import { requireAppUser } from "@/lib/server-auth";
 
 export const dynamic = "force-dynamic";
 
-// Tizim hozircha faqat administrator uchun ochiq: tizimga kirmagan yoki
-// admin bo'lmagan foydalanuvchini boshi berk sahifa o'rniga login sahifasiga yuboramiz.
-async function isAdminVisitor() {
+// Umumiy dashboard faqat administrator uchun. Baholovchi o'z baholash sahifasiga,
+// tizimga kirmagan foydalanuvchi login sahifasiga yuboriladi.
+async function visitorRole() {
   const incoming = await headers();
   const request = new Request("http://internal/", {
     headers: {
@@ -17,13 +17,15 @@ async function isAdminVisitor() {
   });
   try {
     const user = await requireAppUser(request);
-    return user.role === "admin";
+    return String(user.role || "");
   } catch {
-    return false;
+    return "";
   }
 }
 
 export default async function Home() {
-  if (!(await isAdminVisitor())) redirect("/login");
+  const role = await visitorRole();
+  if (role === "evaluator") redirect("/evaluator");
+  if (role !== "admin") redirect("/login");
   return <PublicDashboard />;
 }
