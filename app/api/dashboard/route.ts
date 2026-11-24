@@ -68,7 +68,8 @@ export async function GET(request: Request) {
       [sessionDigest(dashboardSessionToken)],
     );
     if (String(dashboardSession.rows[0]?.role || "") !== "admin") {
-      if (dashboardSession.rows[0]) {
+      // Baholovchi sessiyasi o'chirilmaydi: u faqat umumiy dashboardni ko'ra olmaydi
+      if (dashboardSession.rows[0] && String(dashboardSession.rows[0].role || "") !== "evaluator") {
         await db.pool.query("DELETE FROM sessions WHERE token=$1", [sessionDigest(dashboardSessionToken)]).catch(() => undefined);
       }
       return Response.json(

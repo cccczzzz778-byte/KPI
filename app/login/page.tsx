@@ -35,7 +35,7 @@ export default function LoginPage() {
       <section className="login-card">
         <div className="login-brand"><div><Stethoscope /></div><span>Buxoro viloyati sog‘liqni saqlash boshqarmasi</span></div>
         <h1>KPI nazorat tizimiga kirish</h1>
-        <p>Tizim hozircha faqat administrator uchun ochiq. Administrator login va parolini kiriting.</p>
+        <p>Tizim hozircha administrator va baholovchilar uchun ochiq. Sizga berilgan login va parolni kiriting.</p>
         <form onSubmit={submit}>
           <label>Login<input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" required /></label>
           <label>Parol<div className="password-field"><input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required /><button type="button" className="password-toggle" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "Parolni yashirish" : "Parolni ko‘rsatish"} title={showPassword ? "Parolni yashirish" : "Parolni ko‘rsatish"}>{showPassword ? <EyeOff /> : <Eye />}</button></div></label>
