@@ -1,0 +1,342 @@
+import { commissions, criteria, defaultInstitutions, rounds, type CommissionKey } from "@/lib/kpi-data";
+import { accessErrorResponse, AccessError, requireAppUser } from "@/lib/server-auth";
+import { getKpiDatabase } from "@/lib/netlify-db";
+import { isInstitutionCommissionExcluded } from "@/lib/institution-applicability";
+import { hashPassword } from "@/lib/password";
+
+export const runtime = "nodejs";
+
+ type Payload = {
+  action?: string;
+  id?: string;
+  name?: string;
+  district?: string;
+  type?: string;
+  active?: boolean;
+  email?: string;
+  password?: string;
+  role?: string;
+  commission?: string;
+  institutionId?: string;
+  uploadDate?: string;
+  roundDay?: number;
+  scores?: Record<string, number>;
+  notes?: Record<string, string>;
+};
+
+function requireAdmin(role: string) {
+  if (role !== "admin") throw new AccessError("Bu amal faqat administrator uchun.", 403);
+}
+
+export async function GET(request: Request) {
+  try {
+    const session = await requireAppUser(request);
+    if (session.role === "institution") throw new AccessError("Muassasa kabineti uchun /institution sahifasidan foydalaning.");
+    const db = getKpiDatabase();
+    const [institutionResult, evaluationResult, dailyEvaluationResult, attachmentResult] = await Promise.all([
+      db.pool.query("SELECT id, name, district, type, active, created_at AS \"createdAt\" FROM institutions ORDER BY LOWER(name)"),
+      db.pool.query("SELECT institution_id AS \"institutionId\", round_day AS \"roundDay\", criterion_id AS \"criterionId\", score, note, evaluator_email AS \"evaluatorEmail\", evaluator_name AS \"evaluatorName\", updated_at AS \"updatedAt\" FROM evaluations ORDER BY updated_at DESC"),
+      db.pool.query("SELECT institution_id AS \"institutionId\", criterion_id AS \"criterionId\", TO_CHAR(evaluation_date, 'YYYY-MM-DD') AS \"evaluationDate\", score, note, evaluator_email AS \"evaluatorEmail\", evaluator_name AS \"evaluatorName\", created_at AS \"createdAt\", updated_at AS \"updatedAt\" FROM daily_evaluations ORDER BY evaluation_date DESC, updated_at DESC"),
+      db.pool.query("SELECT id, institution_id AS \"institutionId\", round_day AS \"roundDay\", criterion_id AS \"criterionId\", filename, content_type AS \"contentType\", size_bytes AS \"sizeBytes\", uploaded_by AS \"uploadedBy\", source, responsible_name AS \"responsibleName\", responsible_phone AS \"responsiblePhone\", TO_CHAR(submission_date, 'YYYY-MM-DD') AS \"submissionDate\", created_at AS \"createdAt\" FROM attachments ORDER BY created_at DESC"),
+    ]);
+
+    const institutionMap = new Map<string, Record<string, unknown>>(
+      defaultInstitutions.map((item) => [item.id, { ...item, active: 1 }]),
+    );
+    for (const row of institutionResult.rows) institutionMap.set(String(row.id), row);
+    const institutions = Array.from(institutionMap.values())
+      .filter((item) => session.role === "admin" || Number(item.active) === 1)
+      .sort((a, b) => String(a.name).localeCompare(String(b.name), "uz"));
+
+    const validCriteria = new Set(criteria.map((item) => item.id));
+    const allowedCriteria = session.role === "evaluator"
+      ? new Set(criteria.filter((item) => item.commission === session.commission).map((item) => item.id))
+      : validCriteria;
+    const evaluationRows = evaluationResult.rows as Array<Record<string, unknown>>;
+    const dailyEvaluationRows = dailyEvaluationResult.rows as Array<Record<string, unknown>>;
+    const attachmentRows = attachmentResult.rows as Array<Record<string, unknown>>;
+    const evaluations = evaluationRows.filter((row) =>
+      validCriteria.has(String(row.criterionId)) && allowedCriteria.has(String(row.criterionId)),
+    );
+    const dailyEvaluations = dailyEvaluationRows.filter((row) =>
+      validCriteria.has(String(row.criterionId)) && allowedCriteria.has(String(row.criterionId)),
+    );
+    const attachments = attachmentRows.filter((row) =>
+      row.source === "institution_order" ||
+      (validCriteria.has(String(row.criterionId)) && allowedCriteria.has(String(row.criterionId))),
+    );
+
+    let users: unknown[] = [];
+    let auditLogs: unknown[] = [];
+    if (session.role === "admin") {
+      const [userResult, logResult] = await Promise.all([
+        db.pool.query("SELECT email, name, role, commission, institution_id AS \"institutionId\", active, created_at AS \"createdAt\", updated_at AS \"updatedAt\" FROM users ORDER BY role, name, email"),
+        db.pool.query("SELECT id, actor_email AS \"actorEmail\", action, target_type AS \"targetType\", target_id AS \"targetId\", details, created_at AS \"createdAt\" FROM audit_logs ORDER BY id DESC LIMIT 100"),
+      ]);
+      users = userResult.rows;
+      auditLogs = logResult.rows;
+    }
+
+    const settingResult = await db.pool.query("SELECT value FROM system_settings WHERE key = 'institution_upload_date' LIMIT 1");
+    const uploadSettings = { uploadDate: String(settingResult.rows[0]?.value ?? ""), openTime: "08:00", closeTime: "18:00" };
+    return Response.json({ session, institutions, evaluations, dailyEvaluations, attachments, users, auditLogs, uploadSettings });
+  } catch (error) {
+    return accessErrorResponse(error);
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const session = await requireAppUser(request);
+    if (session.role === "institution") throw new AccessError("Muassasa kabineti uchun /institution sahifasidan foydalaning.");
+    const payload = (await request.json()) as Payload;
+    const db = getKpiDatabase();
+
+    if (payload.action === "save_evaluation") {
+      const institutionId = payload.institutionId?.trim() ?? "";
+      const roundDay = Number(payload.roundDay);
+      const scoreMap = payload.scores ?? {};
+      const noteMap = payload.notes ?? {};
+      const allowedCommission = session.role === "evaluator" ? session.commission : null;
+      if (session.role === "monitor") throw new AccessError("Monitoring foydalanuvchisi baho qo‘ya olmaydi.");
+      if (!institutionId || !rounds.includes(roundDay as (typeof rounds)[number])) {
+        return Response.json({ error: "Muassasa yoki baholash davri noto‘g‘ri." }, { status: 400 });
+      }
+      /* PATCH80C_EVALUATOR_GUARD */
+      if (session.role === "evaluator" && allowedCommission && await isInstitutionCommissionExcluded(institutionId, allowedCommission)) {
+        throw new AccessError("Bu bo‘lim ushbu muassasaga tatbiq etilmaydi.", 403);
+      }
+      const entries = Object.entries(scoreMap);
+      if (!entries.length) return Response.json({ error: "Baholash mezonlari tanlanmagan." }, { status: 400 });
+      for (const [criterionId, score] of entries) {
+        const criterion = criteria.find((item) => item.id === criterionId);
+        if (!criterion || ![0, 1, 2].includes(Number(score))) {
+          return Response.json({ error: "Ball qiymati noto‘g‘ri." }, { status: 400 });
+        }
+        if (allowedCommission && criterion.commission !== allowedCommission) {
+          throw new AccessError("Siz faqat biriktirilgan yo‘nalishni baholay olasiz.");
+        }
+      }
+
+      const client = await db.pool.connect();
+      let saved = 0;
+      let unchanged = 0;
+      try {
+        await client.query("BEGIN");
+        await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", ["evaluation:" + institutionId + ":" + roundDay]);
+        const existingResult = await client.query(
+          "SELECT criterion_id AS \"criterionId\", score, note, updated_at AS \"updatedAt\" FROM evaluations WHERE institution_id = $1 AND round_day = $2",
+          [institutionId, roundDay],
+        );
+        const existingRows = existingResult.rows as Array<Record<string, unknown>>;
+        const existingMap = new Map(existingRows.map((row) => [String(row.criterionId), row]));
+        const todayEvaluationResult = await client.query(
+          "SELECT criterion_id AS \"criterionId\", score, note FROM daily_evaluations WHERE institution_id = $1 AND evaluation_date = (NOW() AT TIME ZONE 'Asia/Tashkent')::date",
+          [institutionId],
+        );
+        const todayEvaluationMap = new Map(
+          (todayEvaluationResult.rows as Array<Record<string, unknown>>).map((row) => [String(row.criterionId), row]),
+        );
+        const patch97Today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Tashkent", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+        const patch97CycleStart = patch97Today >= "2026-10-05" && patch97Today <= "2026-10-31"
+          ? "2026-10-05"
+          : `${patch97Today.slice(0, 7)}-01`;
+        const patch97CycleResult = await client.query(
+          "SELECT DISTINCT criterion_id AS \"criterionId\" FROM daily_evaluations WHERE institution_id = $1 AND evaluation_date BETWEEN $2::date AND (NOW() AT TIME ZONE 'Asia/Tashkent')::date",
+          [institutionId, patch97CycleStart],
+        );
+        const patch97CycleCriterionIds = new Set(
+          (patch97CycleResult.rows as Array<Record<string, unknown>>).map((row) => String(row.criterionId)),
+        );
+        const isPatch64DailyEvaluation = (criterionId: string) => {
+          const criterion = criteria.find((item) => item.id === criterionId);
+          return Boolean(criterion && String(criterion.deadline || "").toLocaleLowerCase("uz").includes("doimiy"));
+        };
+        const changedEntries = entries.filter(([criterionId, score]) => {
+          const previous = existingMap.get(criterionId);
+          const note = (noteMap[criterionId] ?? "").trim();
+          // New KPI month: every criterion must create at least one row in the current cycle,
+          // even when its score is identical to the previous month.
+          if (!patch97CycleCriterionIds.has(criterionId)) return true;
+          if (isPatch64DailyEvaluation(criterionId) && !todayEvaluationMap.has(criterionId)) return true;
+          if (!previous) return true;
+          return Number(previous.score) !== Number(score) || String(previous.note ?? "").trim() !== note;
+        });
+        unchanged = entries.length - changedEntries.length;
+
+        if (session.role === "evaluator") {
+          for (const [criterionId, score] of changedEntries) {
+            const criterion = criteria.find((item) => item.id === criterionId);
+            if (!criterion || criterion.requiresInstitutionFile !== true) continue;
+            const previous = existingMap.get(criterionId);
+            const dailyEvaluation = isPatch64DailyEvaluation(criterionId);
+            const scoreChanged = !previous || Number(previous.score) !== Number(score);
+            if (!scoreChanged && !dailyEvaluation) continue;
+            const evidenceResult = await client.query(
+              dailyEvaluation
+                ? "SELECT created_at AS \"createdAt\" FROM attachments WHERE institution_id = $1 AND criterion_id = $2 AND source IN ('institution', 'institution_submission') AND (created_at AT TIME ZONE 'Asia/Tashkent')::date = (NOW() AT TIME ZONE 'Asia/Tashkent')::date ORDER BY created_at DESC LIMIT 1"
+                : "SELECT created_at AS \"createdAt\" FROM attachments WHERE institution_id = $1 AND criterion_id = $2 AND source IN ('institution', 'institution_submission') ORDER BY created_at DESC LIMIT 1",
+              [institutionId, criterionId],
+            );
+            const latestEvidence = evidenceResult.rows[0]?.createdAt ? new Date(evidenceResult.rows[0].createdAt).getTime() : 0;
+            if (!latestEvidence && Number(score) === 0 && (dailyEvaluation || !previous)) continue;
+            if (!latestEvidence) {
+              throw new AccessError("Avval muassasa ushbu mezon bo‘yicha dalil faylini yuklashi kerak.", 409);
+            }
+            if (!dailyEvaluation && previous?.updatedAt) {
+              const previousScoreAt = new Date(previous.updatedAt as string | number | Date).getTime();
+              if (Number.isFinite(previousScoreAt) && latestEvidence <= previousScoreAt) {
+                throw new AccessError("Bu mezonning amaldagi bali yangi dalil fayli yuklanmaguncha o‘zgartirilmaydi.", 409);
+              }
+            }
+          }
+        }
+
+        for (const [criterionId, score] of changedEntries) {
+          const note = (noteMap[criterionId] ?? "").trim();
+          await client.query(
+            "INSERT INTO daily_evaluations (institution_id, criterion_id, evaluation_date, score, note, evaluator_email, evaluator_name, created_at, updated_at) VALUES ($1, $2, (NOW() AT TIME ZONE 'Asia/Tashkent')::date, $3, $4, $5, $6, NOW(), NOW()) ON CONFLICT (institution_id, criterion_id, evaluation_date) DO UPDATE SET score = EXCLUDED.score, note = EXCLUDED.note, evaluator_email = EXCLUDED.evaluator_email, evaluator_name = EXCLUDED.evaluator_name, updated_at = NOW()",
+            [institutionId, criterionId, Number(score), note, session.email, session.name],
+          );
+          await client.query(
+            "INSERT INTO evaluations (institution_id, round_day, criterion_id, score, note, evaluator_email, evaluator_name, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW()) ON CONFLICT (institution_id, round_day, criterion_id) DO UPDATE SET score = EXCLUDED.score, note = EXCLUDED.note, evaluator_email = EXCLUDED.evaluator_email, evaluator_name = EXCLUDED.evaluator_name, updated_at = CASE WHEN evaluations.score IS DISTINCT FROM EXCLUDED.score THEN NOW() ELSE evaluations.updated_at END",
+            [institutionId, roundDay, criterionId, Number(score), note, session.email, session.name],
+          );
+        }
+        if (changedEntries.length) {
+          const auditDetail = "Baholash yangilandi: " + changedEntries.length + " mezon · " + (new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Tashkent" })).format(new Date());
+          await client.query(
+            "INSERT INTO audit_logs (actor_email, action, target_type, target_id, details) VALUES ($1, 'evaluation_saved', 'institution', $2, $3)",
+            [session.email, institutionId, auditDetail],
+          );
+        }
+        await client.query("COMMIT");
+        saved = changedEntries.length;
+      } catch (error) {
+        await client.query("ROLLBACK").catch(() => undefined);
+        throw error;
+      } finally {
+        client.release();
+      }
+      return Response.json({ saved, unchanged });
+    }
+
+    requireAdmin(session.role);
+
+    if (payload.action === "set_institution_upload_date") {
+      const uploadDate = payload.uploadDate?.trim() ?? "";
+      if (uploadDate && !/^\d{4}-\d{2}-\d{2}$/.test(uploadDate)) {
+        return Response.json({ error: "Yuklash sanasi noto‘g‘ri." }, { status: 400 });
+      }
+      await db.pool.query(
+        `INSERT INTO system_settings (key, value, updated_at) VALUES ('institution_upload_date', $1, NOW())
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+        [uploadDate],
+      );
+      await db.pool.query(
+        "INSERT INTO audit_logs (actor_email, action, target_type, target_id, details) VALUES ($1, 'upload_date_changed', 'setting', 'institution_upload_date', $2)",
+        [session.email, uploadDate || "Yopildi"],
+      );
+      return Response.json({ saved: true, uploadDate });
+    }
+
+    if (payload.action === "upsert_institution") {
+      const id = payload.id?.trim() || crypto.randomUUID();
+      const name = payload.name?.trim() ?? "";
+      if (!name) return Response.json({ error: "Muassasa nomini kiriting." }, { status: 400 });
+      const client = await db.pool.connect();
+      try {
+        await client.query("BEGIN");
+        await client.query(
+          `INSERT INTO institutions (id, name, district, type, active) VALUES ($1, $2, $3, $4, $5)
+           ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, district = EXCLUDED.district,
+             type = EXCLUDED.type, active = EXCLUDED.active`,
+          [id, name, payload.district?.trim() ?? "", payload.type?.trim() ?? "", payload.active === false ? 0 : 1],
+        );
+        await client.query(
+          "INSERT INTO audit_logs (actor_email, action, target_type, target_id, details) VALUES ($1, 'institution_updated', 'institution', $2, $3)",
+          [session.email, id, name],
+        );
+        await client.query("COMMIT");
+      } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+      } finally {
+        client.release();
+      }
+      return Response.json({ saved: true, id });
+    }
+
+    if (payload.action === "upsert_user") {
+      const email = payload.email?.trim().toLowerCase() ?? "";
+      const role = payload.role ?? "evaluator";
+      const commission = payload.commission ?? "";
+      const isValidLogin = /^[a-z0-9._-]{3,40}$/.test(email);
+      const institutionId = payload.institutionId?.trim() ?? "";
+      if (!isValidLogin || !["admin", "evaluator", "monitor", "institution"].includes(role)) {
+        return Response.json({ error: "Login yoki rol noto‘g‘ri." }, { status: 400 });
+      }
+      if (role === "evaluator" && !commissions.some((item) => item.id === commission as CommissionKey)) {
+        return Response.json({ error: "Baholovchi uchun yo‘nalishni tanlang." }, { status: 400 });
+      }
+      if (role === "institution" && !institutionId) {
+        return Response.json({ error: "Muassasa hisobiga muassasani biriktiring." }, { status: 400 });
+      }
+      const existing = await db.pool.query("SELECT email FROM users WHERE email = $1", [email]);
+      if (!existing.rowCount && !(payload.password?.trim())) {
+        return Response.json({ error: "Yangi foydalanuvchi uchun parol kiriting." }, { status: 400 });
+      }
+      if (payload.password) {
+        const password = payload.password;
+        if (password.length < 12 || password.length > 128) {
+          return Response.json({ error: "Parol 12–128 ta belgidan iborat bo‘lsin." }, { status: 400 });
+        }
+        if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+          return Response.json({ error: "Parolda kamida bitta harf va bitta raqam bo‘lsin." }, { status: 400 });
+        }
+        const weak = password.toLowerCase().replace(/[^a-z0-9]/g, "");
+        if (["123456789012", "password1234", "admin123456", "qwerty123456"].includes(weak)) {
+          return Response.json({ error: "Bu parol juda oddiy. Murakkabroq parol tanlang." }, { status: 400 });
+        }
+      }
+      const passwordHash = payload.password ? hashPassword(payload.password) : null;
+      const client = await db.pool.connect();
+      try {
+        await client.query("BEGIN");
+        if (existing.rowCount) {
+          if (passwordHash) {
+            await client.query(
+              `UPDATE users SET name = $2, role = $3, commission = $4, active = $5, password_hash = $6, institution_id = $7, updated_at = NOW() WHERE email = $1`,
+              [email, payload.name?.trim() ?? "", role, role === "evaluator" ? commission : "", payload.active === false ? 0 : 1, passwordHash, role === "institution" ? institutionId : ""],
+            );
+          } else {
+            await client.query(
+              `UPDATE users SET name = $2, role = $3, commission = $4, active = $5, institution_id = $6, updated_at = NOW() WHERE email = $1`,
+              [email, payload.name?.trim() ?? "", role, role === "evaluator" ? commission : "", payload.active === false ? 0 : 1, role === "institution" ? institutionId : ""],
+            );
+          }
+        } else {
+          await client.query(
+            `INSERT INTO users (email, name, role, commission, active, password_hash, institution_id) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+            [email, payload.name?.trim() ?? "", role, role === "evaluator" ? commission : "", payload.active === false ? 0 : 1, passwordHash, role === "institution" ? institutionId : ""],
+          );
+        }
+        await client.query(
+          "INSERT INTO audit_logs (actor_email, action, target_type, target_id, details) VALUES ($1, 'user_updated', 'user', $2, $3)",
+          [session.email, email, role],
+        );
+        await client.query("COMMIT");
+      } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+      } finally {
+        client.release();
+      }
+      return Response.json({ saved: true });
+    }
+
+    return Response.json({ error: "Noma’lum amal." }, { status: 400 });
+  } catch (error) {
+    return accessErrorResponse(error);
+  }
+}
