@@ -1,0 +1,17 @@
+"use client";
+import { useEffect,useMemo,useState } from "react";
+import { CheckCircle2,RefreshCw,Search,ShieldOff } from "lucide-react";
+type Institution={id:string;name:string;district?:string;type?:string;active?:number};
+type Exclusion={institutionId:string;commission:string};
+const dirs=[["ijro","Ijro"],["birlamchi","Birlamchi"],["statsionar","Statsionar"],["raqam","Raqam"],["moliya","Moliya"]] as const;
+export default function AdminInstitutionApplicability(){
+ const [institutions,setInstitutions]=useState<Institution[]>([]),[exclusions,setExclusions]=useState<Exclusion[]>([]),[query,setQuery]=useState(""),[busy,setBusy]=useState(""),[error,setError]=useState("");
+ async function load(){try{setError("");const [a,b]=await Promise.all([fetch("/api/admin/institutions",{cache:"no-store"}),fetch("/api/applicability",{cache:"no-store"})]);const aj=await a.json(),bj=await b.json();if(!a.ok)throw new Error(aj.error||"Muassasalar yuklanmadi.");if(!b.ok)throw new Error(bj.error||"Tatbiq holati yuklanmadi.");setInstitutions(Array.isArray(aj.institutions)?aj.institutions:[]);setExclusions(Array.isArray(bj.exclusions)?bj.exclusions:[])}catch(e){setError(e instanceof Error?e.message:"Xatolik")}}
+ useEffect(()=>{void load()},[]);
+ const excluded=useMemo(()=>new Set(exclusions.map(x=>x.institutionId+"::"+x.commission)),[exclusions]);
+ const rows=useMemo(()=>{const q=query.trim().toLocaleLowerCase("uz");return institutions.filter(x=>x.active!==0).filter(x=>!q||[x.name,x.district,x.type,x.id].some(v=>String(v||"").toLocaleLowerCase("uz").includes(q))).sort((a,b)=>a.name.localeCompare(b.name,"uz"))},[institutions,query]);
+ async function toggle(id:string,commission:string){const key=id+"::"+commission,isExcluded=excluded.has(key);setBusy(key);setError("");try{const r=await fetch("/api/applicability",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({institutionId:id,commission,applicable:isExcluded})});const j=await r.json();if(!r.ok)throw new Error(j.error||"Saqlanmadi.");setExclusions(p=>isExcluded?p.filter(x=>!(x.institutionId===id&&x.commission===commission)):[...p,{institutionId:id,commission}])}catch(e){setError(e instanceof Error?e.message:"Saqlanmadi.")}finally{setBusy("")}}
+ return <section className="applicability-admin"><div className="applicability-head"><div><span>MUASSASA × BO‘LIM</span><h3>Tatbiq etilmaydigan bo‘limlar</h3><p>N/A qilingan bo‘limning baholovchisiga ushbu muassasa ko‘rinmaydi.</p></div><button type="button" onClick={()=>void load()}><RefreshCw size={14}/>Yangilash</button></div>
+ <div className="applicability-search"><Search size={14}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Muassasa qidirish..."/></div>{error&&<div className="applicability-error">{error}</div>}
+ <div className="applicability-table-wrap"><table><thead><tr><th>Muassasa</th>{dirs.map(d=><th key={d[0]}>{d[1]}</th>)}</tr></thead><tbody>{rows.map(inst=><tr key={inst.id}><td><strong>{inst.name}</strong><small>{[inst.district,inst.type].filter(Boolean).join(" · ")||inst.id}</small></td>{dirs.map(d=>{const key=inst.id+"::"+d[0],na=excluded.has(key);return <td key={d[0]}><button type="button" disabled={busy===key} className={na?"na":"yes"} onClick={()=>void toggle(inst.id,d[0])}>{na?<><ShieldOff size={13}/>N/A</>:<><CheckCircle2 size={13}/>Amal qiladi</>}</button></td>})}</tr>)}</tbody></table></div></section>
+}
