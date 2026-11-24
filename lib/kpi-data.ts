@@ -436,76 +436,124 @@ export const criteria: Criterion[] = [
     "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
   },
   {
-    "id": "p03-04",
-    "commission": "raqam",
-    "title": "Har bir bo‘lim katta hamshirasi tomonidan har kuni soat 08:00 va 17:00 da shok palatasi va qabul bo‘limi zaxirasini monitoring qilish hamda maxsus elektron / qog‘oz jurnalda qayd qilib borish.",
-    "detail": "3.4. Har bir bo‘lim katta hamshirasi tomonidan har kuni soat 08:00 va 17:00 da shok palatasi va qabul bo‘limi zaxirasini monitoring qilish hamda maxsus elektron / qog‘oz jurnalda qayd qilib borish.",
-    "deadline": "Har kuni (doimiy)",
-    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
-  },
-  {
     "id": "p20-01",
     "commission": "raqam",
-    "title": "2026-yilning 6 oylik amalga oshirilgan ishlari hisoboti tahlili.",
-    "detail": "20.1. 2026-yilning 6 oylik amalga oshirilgan ishlari hisoboti tahlili.",
+    "title": "2026-yilda raqamlashtirish yo‘nalishida amalga oshirilgan ishlar yuzasidan hisobot taqdim etish.",
+    "detail": "2026-yilda raqamlashtirish yo‘nalishida amalga oshirilgan ishlar yuzasidan hisobot taqdim etish.",
     "deadline": "Dolzarb 60 kunlik doirasida",
-    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
+    "source": "Raqamlashtirish mezonlari (2026-yil 24-noyabrda yangilangan)"
   },
   {
     "id": "p20-02",
     "commission": "raqam",
     "title": "Kelgusida yil yakuniga qadar amalga oshiriladigan ustuvor vazifalar yuzasidan strategik rejalar taqdimoti va yo‘l xaritasini belgilash.",
-    "detail": "20.2. Kelgusida yil yakuniga qadar amalga oshiriladigan ustuvor vazifalar yuzasidan strategik rejalar taqdimoti va yo‘l xaritasini belgilash.",
+    "detail": "Kelgusida yil yakuniga qadar amalga oshiriladigan ustuvor vazifalar yuzasidan strategik rejalar taqdimoti va yo‘l xaritasini belgilash.",
     "deadline": "Dolzarb 60 kunlik doirasida",
-    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
+    "source": "Raqamlashtirish mezonlari (2026-yil 24-noyabrda yangilangan)"
   },
   {
     "id": "p20-03",
     "commission": "raqam",
-    "title": "Monitoring yuritish, KPI asosida rahbarlarni baholash hamda yakuniy xulosa yuzasidan sog‘liqni saqlash vazirligiga axborot kiritish.",
-    "detail": "20.3. Monitoring yuritish, KPI asosida rahbarlarni baholash hamda yakuniy xulosa yuzasidan sog‘liqni saqlash vazirligiga axborot kiritish.",
-    "deadline": "Dolzarb 60 kunlik doirasida",
-    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
+    "title": "Monitoring yuritish, KPI asosida muassasa faoliyatini baholash hamda yakuniy xulosa yuzasidan Sog‘liqni saqlash boshqarmasiga axborot kiritish.",
+    "detail": "Monitoring yuritish, KPI asosida muassasa faoliyatini baholash hamda yakuniy xulosa yuzasidan Sog‘liqni saqlash boshqarmasiga axborot kiritish.",
+    "deadline": "Har oyda 1 marta",
+    "source": "Raqamlashtirish mezonlari (2026-yil 24-noyabrda yangilangan)"
   },
   {
     "id": "p19-01",
     "commission": "raqam",
-    "title": "Ommaviy axborot vositalari orqali (televideniye, radio, gazeta, jurnal, ijtimoiy tarmoqlar) kasalliklar profilaktikasi, zamonaviy diagnostika va davolash hamda sog‘lom turmush tarzini targ‘ib qilish bo‘yicha media-rejalarni ishlab chiqish.",
-    "detail": "19.1. Ommaviy axborot vositalari orqali (televideniye, radio, gazeta, jurnal, ijtimoiy tarmoqlar) kasalliklar profilaktikasi, zamonaviy diagnostika va davolash hamda sog‘lom turmush tarzini targ‘ib qilish bo‘yicha media-rejalarni ishlab chiqish.",
-    "deadline": "10 kun muddatda",
-    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
+    "title": "Ommaviy axborot vositalari (televideniye, radio, gazeta, jurnal, ijtimoiy tarmoqlar) orqali kasalliklar profilaktikasi, zamonaviy diagnostika va davolash hamda sog‘lom turmush tarzini targ‘ib qilish bo‘yicha media-rejalarni ishlab chiqish.",
+    "detail": "Ommaviy axborot vositalari (televideniye, radio, gazeta, jurnal, ijtimoiy tarmoqlar) orqali kasalliklar profilaktikasi, zamonaviy diagnostika va davolash hamda sog‘lom turmush tarzini targ‘ib qilish bo‘yicha media-rejalarni ishlab chiqish.",
+    "deadline": "Har kuni (doimiy)",
+    "source": "Raqamlashtirish mezonlari (2026-yil 24-noyabrda yangilangan)"
   },
   {
     "id": "p19-02",
     "commission": "raqam",
-    "title": "Hamkor tashkilotlar (mahalla, yoshlar, xotin-qizlar, maktabgacha va maktab, oliy ta’lim, televideniye) bilan birgalikda kasalliklarni oldini olish va profilaktikasi bo‘yicha ommaviy axborot vositalari (televideniye, radio, gazeta, jurnal, ijtimoiy tarmoqlar) orqali keng yoritib borish.",
-    "detail": "19.2. Hamkor tashkilotlar (mahalla, yoshlar, xotin-qizlar, maktabgacha va maktab, oliy ta’lim, televideniye) bilan birgalikda kasalliklarni oldini olish va profilaktikasi bo‘yicha ommaviy axborot vositalari (televideniye, radio, gazeta, jurnal, ijtimoiy tarmoqlar) orqali keng yoritib borish.",
-    "deadline": "Haftada 1 marta",
-    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
+    "title": "Hamkor tashkilotlar (mahalla, yoshlar, xotin-qizlar, maktabgacha ta’lim va maktablar, oliy ta’lim muassasalari, televideniye) bilan birgalikda kasalliklarning oldini olish va profilaktikasi masalalarini ommaviy axborot vositalari (televideniye, radio, gazeta, jurnal, ijtimoiy tarmoqlar) orqali keng yoritib borish.",
+    "detail": "Hamkor tashkilotlar (mahalla, yoshlar, xotin-qizlar, maktabgacha ta’lim va maktablar, oliy ta’lim muassasalari, televideniye) bilan birgalikda kasalliklarning oldini olish va profilaktikasi masalalarini ommaviy axborot vositalari (televideniye, radio, gazeta, jurnal, ijtimoiy tarmoqlar) orqali keng yoritib borish.",
+    "deadline": "Har kuni (doimiy)",
+    "source": "Raqamlashtirish mezonlari (2026-yil 24-noyabrda yangilangan)"
   },
   {
-    "id": "p19-03",
+    "id": "digital-preferential-referrals",
     "commission": "raqam",
-    "title": "Amalga oshirilgan ishlar bo‘yicha hisobotlarni asoslari bilan boshqarmaga taqdim etib borish",
-    "detail": "19.3. Amalga oshirilgan ishlar bo‘yicha hisobotlarni asoslari bilan boshqarmaga taqdim etib borish",
-    "deadline": "Har oyda 1 marta",
-    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
+    "title": "Imtiyozli yo‘llanmalarning muassasada o‘z vaqtida bajarilishi yuzasidan kunlik monitoring olib borish.",
+    "detail": "Imtiyozli yo‘llanmalarning muassasada o‘z vaqtida bajarilishi yuzasidan kunlik monitoring olib borish.",
+    "deadline": "Har kuni (doimiy)",
+    "source": "Raqamlashtirish mezonlari (2026-yil 24-noyabrda yangilangan)"
+  },
+  {
+    "id": "digital-dmed-ai",
+    "commission": "raqam",
+    "title": "Shifokorlarning DMED tizimida sun’iy intellekt (AI) imkoniyatlaridan foydalanishini nazorat qilib borish.",
+    "detail": "Shifokorlarning DMED tizimida sun’iy intellekt (AI) imkoniyatlaridan foydalanishini nazorat qilib borish.",
+    "deadline": "Har kuni (doimiy)",
+    "source": "Raqamlashtirish mezonlari (2026-yil 24-noyabrda yangilangan)"
   },
   {
     "id": "digital-mother-child-registry",
     "commission": "raqam",
-    "title": "Ona-bola restr tizimida malumorlar to`ldirilish bo`yicha nazorat",
-    "detail": "Ona-bola restr tizimida malumorlar to`ldirilish bo`yicha nazorat",
+    "title": "“Ona va bola” tizimiga ma’lumotlar kiritilishini Excel shaklida monitoring qilib borish.",
+    "detail": "“Ona va bola” tizimiga ma’lumotlar kiritilishini Excel shaklida monitoring qilib borish.",
     "deadline": "Har kuni (doimiy)",
-    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
+    "source": "Raqamlashtirish mezonlari (2026-yil 24-noyabrda yangilangan)"
   },
   {
     "id": "digital-camera-monitoring",
     "commission": "raqam",
-    "title": "Videokuzatuv monitoringgi",
-    "detail": "Videokuzatuv monitoringgi",
+    "title": "Muassasadagi videokuzatuv tizimining uzluksiz ishlashini monitoring qilib borish.",
+    "detail": "Muassasadagi videokuzatuv tizimining uzluksiz ishlashini monitoring qilib borish.",
     "deadline": "Har kuni (doimiy)",
-    "source": "60 kunlik baholovchilar va mezonlar taqsimoti"
+    "source": "Raqamlashtirish mezonlari (2026-yil 24-noyabrda yangilangan)"
+  },
+  {
+    "id": "digital-reception-cameras",
+    "commission": "raqam",
+    "title": "Qabul bo‘limi videokameralarini Sog‘liqni saqlash vazirligi tizimiga ulash va monitoring qilib borish.",
+    "detail": "Qabul bo‘limi videokameralarini Sog‘liqni saqlash vazirligi tizimiga ulash va monitoring qilib borish.",
+    "deadline": "Har kuni (doimiy)",
+    "source": "Raqamlashtirish mezonlari (2026-yil 24-noyabrda yangilangan)"
+  },
+  {
+    "id": "digital-cashier-cameras",
+    "commission": "raqam",
+    "title": "Kassa xonalaridagi videokameralarni Sog‘liqni saqlash vazirligi va Sog‘liqni saqlash boshqarmasi tizimlariga ulash.",
+    "detail": "Kassa xonalaridagi videokameralarni Sog‘liqni saqlash vazirligi va Sog‘liqni saqlash boshqarmasi tizimlariga ulash.",
+    "deadline": "Har kuni (doimiy)",
+    "source": "Raqamlashtirish mezonlari (2026-yil 24-noyabrda yangilangan)"
+  },
+  {
+    "id": "digital-pacs",
+    "commission": "raqam",
+    "title": "Muassasadagi rentgen, UZI, EKG, MSKT va MRT uskunalarini PACS tizimiga ulash.",
+    "detail": "Muassasadagi rentgen, UZI, EKG, MSKT va MRT uskunalarini PACS tizimiga ulash.",
+    "deadline": "Haftada 1 marta",
+    "source": "Raqamlashtirish mezonlari (2026-yil 24-noyabrda yangilangan)"
+  },
+  {
+    "id": "digital-lis",
+    "commission": "raqam",
+    "title": "Muassasa laboratoriya uskunalarini LIS (laboratoriya axborot tizimi)ga ulash.",
+    "detail": "Muassasa laboratoriya uskunalarini LIS (laboratoriya axborot tizimi)ga ulash.",
+    "deadline": "Haftada 1 marta",
+    "source": "Raqamlashtirish mezonlari (2026-yil 24-noyabrda yangilangan)"
+  },
+  {
+    "id": "digital-warehouse-module",
+    "commission": "raqam",
+    "title": "Ombor modulining kundalik ishlashini nazorat qilish: dori vositalari bilan ishlovchi xodimlar tomonidan talabnoma asosida qabul qilinganini tasdiqlovchi skrinshotlarni yuklab borish.",
+    "detail": "Ombor modulining kundalik ishlashini nazorat qilish: dori vositalari bilan ishlovchi xodimlar tomonidan talabnoma asosida qabul qilinganini tasdiqlovchi skrinshotlarni yuklab borish.",
+    "deadline": "Har kuni (doimiy)",
+    "source": "Raqamlashtirish mezonlari (2026-yil 24-noyabrda yangilangan)"
+  },
+  {
+    "id": "digital-qr-situation-center",
+    "commission": "raqam",
+    "title": "QR-kod orqali baholash tizimini Sog‘liqni saqlash boshqarmasining situatsion markaziga ulash va natijalarini haftalik monitoring qilish.",
+    "detail": "QR-kod orqali baholash tizimini Sog‘liqni saqlash boshqarmasining situatsion markaziga ulash va natijalarini haftalik monitoring qilish.",
+    "deadline": "Haftada 1 marta",
+    "source": "Raqamlashtirish mezonlari (2026-yil 24-noyabrda yangilangan)"
   },
   {
     "id": "p01-02",
