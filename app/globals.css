@@ -786,7 +786,13 @@ input, select, textarea, button { max-width: 100%; }
 /* Admin archive v2 */
 .admin-file-refresh, .institution-history-refresh { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 42px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--background); color: inherit; font-weight: 700; cursor: pointer; }
 .admin-file-refresh:disabled, .institution-history-refresh:disabled { opacity: .55; cursor: default; }
-.admin-file-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 12px 0 16px; }
+.admin-file-stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin: 12px 0 16px; }
+.admin-file-archive-tools { display: flex; flex-wrap: wrap; align-items: stretch; gap: 9px; margin: -4px 0 14px; }
+.admin-file-zip, .admin-file-archive-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 42px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--background); color: inherit; font-weight: 700; cursor: pointer; text-decoration: none; }
+.admin-file-zip.disabled, .admin-file-archive-btn:disabled { opacity: .5; cursor: default; pointer-events: none; }
+.admin-file-archive-tools .admin-file-date-field { min-height: 42px; }
+.admin-file-notice { align-self: center; font-size: 13px; font-weight: 600; }
+.admin-file-archived-badge { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 700; background: color-mix(in srgb, #d97706 18%, transparent); color: #b45309; }
 .admin-file-stats > div { min-width: 0; padding: 13px 14px; border: 1px solid var(--border); border-radius: 12px; background: color-mix(in srgb, var(--background) 95%, currentColor 5%); }
 .admin-file-stats span { display: block; font-size: 12px; opacity: .7; margin-bottom: 5px; }
 .admin-file-stats strong { display: block; font-size: 19px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

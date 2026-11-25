@@ -1,5 +1,6 @@
 import { criteria } from "@/lib/kpi-data";
 import { getKpiDatabase } from "@/lib/netlify-db";
+import { buildAdminFileFilter } from "@/lib/admin-file-filters";
 import { AccessError, accessErrorResponse, requireAppUser } from "@/lib/server-auth";
 
 export const runtime = "nodejs";
@@ -18,54 +19,18 @@ export async function GET(request: Request) {
   try {
     await requireAdmin(request);
     const url = new URL(request.url);
-    const q = clean(url.searchParams.get("q")).toLocaleLowerCase("uz");
-    const institutionId = clean(url.searchParams.get("institutionId"));
-    const criterionId = clean(url.searchParams.get("criterionId"));
-    const from = clean(url.searchParams.get("from"));
-    const to = clean(url.searchParams.get("to"));
-    const kind = clean(url.searchParams.get("kind"));
     const sort = clean(url.searchParams.get("sort")) === "oldest" ? "oldest" : "newest";
     const limit = Math.min(200, Math.max(20, Number(url.searchParams.get("limit") || 50)));
     const offset = Math.max(0, Number(url.searchParams.get("offset") || 0));
-
-    const where: string[] = ["1=1"];
-    const params: unknown[] = [];
-    const add = (value: unknown) => {
-      params.push(value);
-      return `$${params.length}`;
-    };
-
-    if (q) {
-      const p = add(`%${q}%`);
-      const titleIds = criteria
-        .filter((item) => String(item.title || "").toLocaleLowerCase("uz").includes(q))
-        .map((item) => item.id);
-      if (titleIds.length) {
-        const ids = add(titleIds);
-        where.push(`(LOWER(COALESCE(a.filename, '')) LIKE ${p} OR LOWER(COALESCE(i.name, '')) LIKE ${p} OR LOWER(COALESCE(a.criterion_id, '')) LIKE ${p} OR a.criterion_id = ANY(${ids}::text[]))`);
-      } else {
-        where.push(`(LOWER(COALESCE(a.filename, '')) LIKE ${p} OR LOWER(COALESCE(i.name, '')) LIKE ${p} OR LOWER(COALESCE(a.criterion_id, '')) LIKE ${p})`);
-      }
-    }
-    if (institutionId) where.push(`a.institution_id = ${add(institutionId)}`);
-    if (criterionId) where.push(`a.criterion_id = ${add(criterionId)}`);
-    if (/^\d{4}-\d{2}-\d{2}$/.test(from)) {
-      where.push(`COALESCE(a.submission_date, DATE(a.created_at AT TIME ZONE 'Asia/Tashkent')) >= ${add(from)}::date`);
-    }
-    if (/^\d{4}-\d{2}-\d{2}$/.test(to)) {
-      where.push(`COALESCE(a.submission_date, DATE(a.created_at AT TIME ZONE 'Asia/Tashkent')) <= ${add(to)}::date`);
-    }
-    if (kind === "order") where.push("a.source = 'institution_order'");
-    else if (kind === "criterion") where.push("a.source = 'institution_submission'");
-    else if (kind === "other") where.push("a.source NOT IN ('institution_order', 'institution_submission')");
+    const { whereSql, params } = buildAdminFileFilter(url);
 
     const db = getKpiDatabase();
-    const whereSql = where.join(" AND ");
     const [statsResult, todayResult, institutionsResult] = await Promise.all([
       db.pool.query(
         `SELECT COUNT(*)::int AS total,
                 COUNT(DISTINCT a.institution_id)::int AS institutions,
-                COALESCE(SUM(a.size_bytes), 0)::bigint AS bytes
+                COALESCE(SUM(a.size_bytes), 0)::bigint AS bytes,
+                COUNT(*) FILTER (WHERE a.archived_at IS NOT NULL)::int AS archived
            FROM attachments a
            LEFT JOIN institutions i ON i.id = a.institution_id
           WHERE ${whereSql}`,
@@ -96,7 +61,8 @@ export async function GET(request: Request) {
               a.responsible_name AS "responsibleName",
               a.responsible_phone AS "responsiblePhone",
               TO_CHAR(a.submission_date, 'YYYY-MM-DD') AS "submissionDate",
-              a.created_at AS "createdAt"
+              a.created_at AS "createdAt",
+              a.archived_at AS "archivedAt"
          FROM attachments a
          LEFT JOIN institutions i ON i.id = a.institution_id
         WHERE ${whereSql}
@@ -132,10 +98,60 @@ export async function GET(request: Request) {
         institutions: Number(statsRow.institutions || 0),
         bytes: Number(statsRow.bytes || 0),
         today: Number(todayResult.rows[0]?.total || 0),
+        archived: Number(statsRow.archived || 0),
       },
       institutions: institutionsResult.rows.map((row) => ({ id: String(row.id), name: String(row.name) })),
       criteria: criteria.map((item) => ({ id: item.id, title: item.title, commission: item.commission })),
     });
+  } catch (error) {
+    return accessErrorResponse(error);
+  }
+}
+
+// Arxivga o'tkazish / arxivdan chiqarish (faqat administrator).
+// { action: "archive_before", before: "YYYY-MM-DD" } — shu sanagacha (sana kirmaydi) yuklangan barcha faol fayllar
+// { action: "archive" | "restore", id: "<fayl id>" } — bitta fayl
+export async function POST(request: Request) {
+  try {
+    const session = await requireAdmin(request);
+    const payload = await request.json().catch(() => ({})) as { action?: string; before?: string; id?: string };
+    const db = getKpiDatabase();
+
+    if (payload.action === "archive_before") {
+      const before = clean(payload.before ?? "");
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(before)) throw new AccessError("Sana noto‘g‘ri.", 400);
+      const result = await db.pool.query(
+        `UPDATE attachments
+            SET archived_at = NOW()
+          WHERE archived_at IS NULL
+            AND created_at < ($1::date)::timestamp AT TIME ZONE 'Asia/Tashkent'`,
+        [before],
+      );
+      const count = result.rowCount ?? 0;
+      await db.pool.query(
+        "INSERT INTO audit_logs (actor_email, action, target_type, target_id, details) VALUES ($1,'archive_files','attachments',$2,$3)",
+        [session.email, before, `${count} ta fayl ${before} sanagacha arxivga o‘tkazildi`],
+      ).catch(() => undefined);
+      return Response.json({ ok: true, count });
+    }
+
+    if (payload.action === "archive" || payload.action === "restore") {
+      const id = clean(payload.id ?? "");
+      if (!id) throw new AccessError("Fayl aniqlanmadi.", 400);
+      const result = await db.pool.query(
+        payload.action === "archive"
+          ? "UPDATE attachments SET archived_at = NOW() WHERE id = $1 AND archived_at IS NULL"
+          : "UPDATE attachments SET archived_at = NULL WHERE id = $1 AND archived_at IS NOT NULL",
+        [id],
+      );
+      await db.pool.query(
+        "INSERT INTO audit_logs (actor_email, action, target_type, target_id, details) VALUES ($1,$2,'attachment',$3,$4)",
+        [session.email, payload.action === "archive" ? "archive_file" : "restore_file", id, payload.action === "archive" ? "Fayl arxivga o‘tkazildi" : "Fayl arxivdan chiqarildi"],
+      ).catch(() => undefined);
+      return Response.json({ ok: true, count: result.rowCount ?? 0 });
+    }
+
+    throw new AccessError("Amal noto‘g‘ri.", 400);
   } catch (error) {
     return accessErrorResponse(error);
   }

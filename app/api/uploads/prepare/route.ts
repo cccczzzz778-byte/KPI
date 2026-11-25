@@ -117,7 +117,7 @@ export async function POST(request: Request) {
       const [settingsResult, nowResult, existingResult] = await Promise.all([
         db.pool.query("SELECT value FROM system_settings WHERE key = 'institution_upload_date' LIMIT 1"),
         db.pool.query(`SELECT TO_CHAR(NOW() AT TIME ZONE 'Asia/Tashkent', 'YYYY-MM-DD') AS date, TO_CHAR(NOW() AT TIME ZONE 'Asia/Tashkent', 'HH24:MI') AS time`),
-        db.pool.query("SELECT id FROM attachments WHERE institution_id = $1 AND source = 'institution_order' LIMIT 1", [institutionId]),
+        db.pool.query("SELECT id FROM attachments WHERE institution_id = $1 AND source = 'institution_order' AND archived_at IS NULL LIMIT 1", [institutionId]),
       ]);
       if (existingResult.rowCount) return Response.json({ error: "BUYRUQ avval yuklangan. Qayta yuklash bloklangan." }, { status: 409 });
       const uploadDate = String(settingsResult.rows[0]?.value ?? "");
@@ -153,7 +153,7 @@ export async function POST(request: Request) {
       const time = String(nowResult.rows[0]?.time ?? "");
       if (time < "08:00" || time > "19:00") throw new AccessError("Mezon fayllari har kuni faqat 08:00–19:00 oralig‘ida yuklanadi.");
       const existing = await db.pool.query(
-        `SELECT id FROM attachments WHERE institution_id = $1 AND criterion_id = $2 AND source = 'institution' AND submission_date = $3::date LIMIT 1`,
+        `SELECT id FROM attachments WHERE institution_id = $1 AND criterion_id = $2 AND source = 'institution' AND submission_date = $3::date AND archived_at IS NULL LIMIT 1`,
         [institutionId, criterionId, today],
       );
       if (existing.rowCount) return Response.json({ error: "Bu mezon uchun bugungi fayl allaqachon yuklangan. Ertaga yana 1 marta yuklash mumkin." }, { status: 409 });
@@ -193,7 +193,7 @@ export async function POST(request: Request) {
       const recurrenceDb = getKpiDatabase();
       if (patch62IsDaily(recurrenceCriterion.deadline)) {
         const sameDay = await recurrenceDb.pool.query(
-          "SELECT created_at AS \"createdAt\" FROM attachments WHERE institution_id=$1 AND criterion_id=$2 AND source IN ('institution','institution_submission') AND (created_at AT TIME ZONE 'Asia/Tashkent')::date >= DATE '2026-09-14' AND (created_at AT TIME ZONE 'Asia/Tashkent')::date = (NOW() AT TIME ZONE 'Asia/Tashkent')::date ORDER BY created_at DESC LIMIT 1",
+          "SELECT created_at AS \"createdAt\" FROM attachments WHERE institution_id=$1 AND criterion_id=$2 AND source IN ('institution','institution_submission') AND archived_at IS NULL AND (created_at AT TIME ZONE 'Asia/Tashkent')::date >= DATE '2026-09-14' AND (created_at AT TIME ZONE 'Asia/Tashkent')::date = (NOW() AT TIME ZONE 'Asia/Tashkent')::date ORDER BY created_at DESC LIMIT 1",
           [recurrenceInstitutionId, recurrenceCriterionId],
         );
         if (sameDay.rows.length) {
@@ -207,7 +207,7 @@ export async function POST(request: Request) {
         const intervalDays = patch62RollingDays(recurrenceCriterion.deadline);
         if (intervalDays) {
           const recentResult = await recurrenceDb.pool.query(
-            "SELECT created_at AS \"createdAt\" FROM attachments WHERE institution_id=$1 AND criterion_id=$2 AND source IN ('institution','institution_submission') AND (created_at AT TIME ZONE 'Asia/Tashkent')::date >= DATE '2026-09-14' ORDER BY created_at DESC LIMIT 1",
+            "SELECT created_at AS \"createdAt\" FROM attachments WHERE institution_id=$1 AND criterion_id=$2 AND source IN ('institution','institution_submission') AND archived_at IS NULL AND (created_at AT TIME ZONE 'Asia/Tashkent')::date >= DATE '2026-09-14' ORDER BY created_at DESC LIMIT 1",
             [recurrenceInstitutionId, recurrenceCriterionId],
           );
           const lastCreatedAt = recentResult.rows[0]?.createdAt ? new Date(recentResult.rows[0].createdAt).getTime() : 0;

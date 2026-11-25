@@ -37,7 +37,7 @@ export async function GET(request: Request) {
       db.pool.query("SELECT id, name, district, type, active, created_at AS \"createdAt\" FROM institutions ORDER BY LOWER(name)"),
       db.pool.query("SELECT institution_id AS \"institutionId\", round_day AS \"roundDay\", criterion_id AS \"criterionId\", score, note, evaluator_email AS \"evaluatorEmail\", evaluator_name AS \"evaluatorName\", updated_at AS \"updatedAt\" FROM evaluations ORDER BY updated_at DESC"),
       db.pool.query("SELECT institution_id AS \"institutionId\", criterion_id AS \"criterionId\", TO_CHAR(evaluation_date, 'YYYY-MM-DD') AS \"evaluationDate\", score, note, evaluator_email AS \"evaluatorEmail\", evaluator_name AS \"evaluatorName\", created_at AS \"createdAt\", updated_at AS \"updatedAt\" FROM daily_evaluations ORDER BY evaluation_date DESC, updated_at DESC"),
-      db.pool.query("SELECT id, institution_id AS \"institutionId\", round_day AS \"roundDay\", criterion_id AS \"criterionId\", filename, content_type AS \"contentType\", size_bytes AS \"sizeBytes\", uploaded_by AS \"uploadedBy\", source, responsible_name AS \"responsibleName\", responsible_phone AS \"responsiblePhone\", TO_CHAR(submission_date, 'YYYY-MM-DD') AS \"submissionDate\", created_at AS \"createdAt\" FROM attachments ORDER BY created_at DESC"),
+      db.pool.query("SELECT id, institution_id AS \"institutionId\", round_day AS \"roundDay\", criterion_id AS \"criterionId\", filename, content_type AS \"contentType\", size_bytes AS \"sizeBytes\", uploaded_by AS \"uploadedBy\", source, responsible_name AS \"responsibleName\", responsible_phone AS \"responsiblePhone\", TO_CHAR(submission_date, 'YYYY-MM-DD') AS \"submissionDate\", created_at AS \"createdAt\", archived_at AS \"archivedAt\" FROM attachments WHERE ($1::boolean OR archived_at IS NULL) ORDER BY created_at DESC", [session.role === "admin"]),
     ]);
 
     const institutionMap = new Map<string, Record<string, unknown>>(
@@ -174,8 +174,8 @@ export async function POST(request: Request) {
             if (!scoreChanged && !dailyEvaluation) continue;
             const evidenceResult = await client.query(
               dailyEvaluation
-                ? "SELECT created_at AS \"createdAt\" FROM attachments WHERE institution_id = $1 AND criterion_id = $2 AND source IN ('institution', 'institution_submission') AND (created_at AT TIME ZONE 'Asia/Tashkent')::date = (NOW() AT TIME ZONE 'Asia/Tashkent')::date ORDER BY created_at DESC LIMIT 1"
-                : "SELECT created_at AS \"createdAt\" FROM attachments WHERE institution_id = $1 AND criterion_id = $2 AND source IN ('institution', 'institution_submission') ORDER BY created_at DESC LIMIT 1",
+                ? "SELECT created_at AS \"createdAt\" FROM attachments WHERE institution_id = $1 AND criterion_id = $2 AND source IN ('institution', 'institution_submission') AND archived_at IS NULL AND (created_at AT TIME ZONE 'Asia/Tashkent')::date = (NOW() AT TIME ZONE 'Asia/Tashkent')::date ORDER BY created_at DESC LIMIT 1"
+                : "SELECT created_at AS \"createdAt\" FROM attachments WHERE institution_id = $1 AND criterion_id = $2 AND source IN ('institution', 'institution_submission') AND archived_at IS NULL ORDER BY created_at DESC LIMIT 1",
               [institutionId, criterionId],
             );
             const latestEvidence = evidenceResult.rows[0]?.createdAt ? new Date(evidenceResult.rows[0].createdAt).getTime() : 0;

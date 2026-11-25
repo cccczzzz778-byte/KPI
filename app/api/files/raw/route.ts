@@ -44,7 +44,8 @@ export async function GET(request: Request) {
               filename,
               content_type AS "contentType",
               size_bytes AS "sizeBytes",
-              source
+              source,
+              archived_at AS "archivedAt"
          FROM attachments
         WHERE id = $1
         LIMIT 1`,
@@ -52,6 +53,7 @@ export async function GET(request: Request) {
     );
     const row = result.rows[0];
     if (!row) throw new AccessError("Fayl topilmadi.", 404);
+    if (row.archivedAt && session.role !== "admin") throw new AccessError("Bu fayl arxivga o‘tkazilgan.", 404);
 
     const criterion = criteria.find((item) => item.id === row.criterionId);
     if (session.role === "institution") {

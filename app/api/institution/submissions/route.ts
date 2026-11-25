@@ -49,6 +49,7 @@ export async function GET(request: Request) {
               created_at AS "createdAt"
          FROM attachments
         WHERE institution_id = $1
+          AND archived_at IS NULL
           AND source IN ('institution', 'institution_submission')
         ORDER BY created_at DESC
         LIMIT 5000`,
@@ -81,6 +82,7 @@ export async function DELETE(request: Request) {
       `DELETE FROM attachments
         WHERE id = $1
           AND institution_id = $2
+          AND archived_at IS NULL
           AND source IN ('institution', 'institution_submission')
       RETURNING object_key AS "objectKey", filename, criterion_id AS "criterionId"`,
       [id, session.institutionId],
