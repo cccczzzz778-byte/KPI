@@ -28,12 +28,13 @@ export async function GET(request: Request) {
     const db = getKpiDatabase();
     const id = new URL(request.url).searchParams.get("id") ?? "";
     const result = await db.pool.query(
-      `SELECT id, institution_id AS "institutionId", criterion_id AS "criterionId", filename, object_key AS "objectKey", content_type AS "contentType", source, storage_provider AS "storageProvider"
+      `SELECT id, institution_id AS "institutionId", criterion_id AS "criterionId", filename, object_key AS "objectKey", content_type AS "contentType", source, storage_provider AS "storageProvider", archived_at AS "archivedAt"
          FROM attachments WHERE id = $1 LIMIT 1`,
       [id],
     );
-    const row = result.rows[0] as { id: string; institutionId: string; criterionId: string; filename: string; objectKey: string; contentType: string; source: string; storageProvider?: string } | undefined;
+    const row = result.rows[0] as { id: string; institutionId: string; criterionId: string; filename: string; objectKey: string; contentType: string; source: string; storageProvider?: string; archivedAt?: string | null } | undefined;
     if (!row) return Response.json({ error: "Fayl topilmadi." }, { status: 404 });
+    if (row.archivedAt && session.role !== "admin") throw new AccessError("Bu fayl arxivga o‘tkazilgan.", 404);
     const criterion = criteria.find((item) => item.id === row.criterionId);
     if (session.role === "evaluator" && row.source !== "institution_order" && commissionKey(criterion?.commission) !== commissionKey(session.commission)) throw new AccessError("Bu faylni ko‘rish huquqi berilmagan.");
     if (session.role === "institution" && row.institutionId !== session.institutionId) throw new AccessError("Bu fayl boshqa muassasaga tegishli.");

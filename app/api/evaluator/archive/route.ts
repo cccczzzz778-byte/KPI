@@ -49,6 +49,7 @@ export async function GET(request: Request) {
             AND a.source IN ('institution', 'institution_submission')
             AND a.criterion_id IS NOT NULL
             AND a.submission_date = (NOW() AT TIME ZONE 'Asia/Tashkent')::date
+            AND a.archived_at IS NULL
             AND TRIM(a.criterion_id::text) = ANY($1::text[])
           WHERE i.active = 1
           GROUP BY i.id`,
@@ -67,6 +68,7 @@ export async function GET(request: Request) {
            FROM institutions i
            JOIN attachments a ON a.institution_id = i.id
           WHERE i.active = 1
+            AND a.archived_at IS NULL
             AND a.source IN ('institution', 'institution_submission', 'institution_order')
           ORDER BY i.name ASC`,
       );
@@ -96,6 +98,7 @@ export async function GET(request: Request) {
          JOIN institutions i ON i.id = a.institution_id
         WHERE a.institution_id = $1
           AND i.active = 1
+          AND a.archived_at IS NULL
           AND a.source IN ('institution', 'institution_submission', 'institution_order')
         ORDER BY a.created_at DESC
         LIMIT 5000`,

@@ -20,7 +20,7 @@ export async function GET(request: Request) {
                 source, responsible_name AS "responsibleName", responsible_phone AS "responsiblePhone",
                 TO_CHAR(submission_date, 'YYYY-MM-DD') AS "submissionDate", created_at AS "createdAt"
            FROM attachments
-          WHERE institution_id = $1 AND source = 'institution'
+          WHERE institution_id = $1 AND source = 'institution' AND archived_at IS NULL
           ORDER BY created_at DESC`,
         [session.institutionId],
       ),
@@ -29,7 +29,7 @@ export async function GET(request: Request) {
                 TO_CHAR(NOW() AT TIME ZONE 'Asia/Tashkent', 'HH24:MI') AS time`,
       ),
       db.pool.query(`SELECT responsible_name AS \"responsibleName\", responsible_phone AS \"responsiblePhone\", order_attachment_id AS \"orderAttachmentId\" FROM institution_responsibles WHERE institution_id = $1 LIMIT 1`, [session.institutionId]),
-      db.pool.query(`SELECT id, filename, size_bytes AS \"sizeBytes\", TO_CHAR(submission_date, 'YYYY-MM-DD') AS \"submissionDate\", created_at AS \"createdAt\" FROM attachments WHERE institution_id = $1 AND source = 'institution_order' LIMIT 1`, [session.institutionId]),
+      db.pool.query(`SELECT id, filename, size_bytes AS \"sizeBytes\", TO_CHAR(submission_date, 'YYYY-MM-DD') AS \"submissionDate\", created_at AS \"createdAt\" FROM attachments WHERE institution_id = $1 AND source = 'institution_order' AND archived_at IS NULL LIMIT 1`, [session.institutionId]),
     ]);
 
     const fallback = defaultInstitutions.find((item) => item.id === session.institutionId);

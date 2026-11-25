@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Download, Eye, FileArchive, FileText, RefreshCw, Search, X } from "lucide-react";
+import { Archive, ArchiveRestore, Download, Eye, FileArchive, FileText, RefreshCw, Search, X } from "lucide-react";
 import { FilePreviewModal, type PreviewFile } from "@/components/file-preview-modal";
 
 type FileItem = PreviewFile & {
@@ -14,11 +14,12 @@ type FileItem = PreviewFile & {
   submissionDate?: string;
   createdAt?: string;
   extension?: string;
+  archivedAt?: string | null;
 };
 
 type InstitutionOption = { id: string; name: string };
 type CriterionOption = { id: string; title: string; commission?: string };
-type Stats = { total: number; institutions: number; bytes: number; today: number };
+type Stats = { total: number; institutions: number; bytes: number; today: number; archived: number };
 type Payload = {
   items?: FileItem[];
   total?: number;
@@ -60,6 +61,10 @@ function canPreview(item: FileItem) {
   return type === "application/pdf" || type.startsWith("image/") || /\.(pdf|jpe?g|png|webp|gif)$/i.test(name);
 }
 
+function todayTashkent() {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Tashkent" }).format(new Date());
+}
+
 function FileName({ item }: { item: FileItem }) {
   const name = cleanFilename(item.filename);
   const archive = /\.(zip|rar)$/i.test(name);
@@ -73,7 +78,7 @@ export function AdminFileArchive() {
   const [items, setItems] = useState<FileItem[]>([]);
   const [institutions, setInstitutions] = useState<InstitutionOption[]>([]);
   const [criteria, setCriteria] = useState<CriterionOption[]>([]);
-  const [stats, setStats] = useState<Stats>({ total: 0, institutions: 0, bytes: 0, today: 0 });
+  const [stats, setStats] = useState<Stats>({ total: 0, institutions: 0, bytes: 0, today: 0, archived: 0 });
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -84,6 +89,10 @@ export function AdminFileArchive() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [kind, setKind] = useState("");
+  const [status, setStatus] = useState("");
+  const [archiveBefore, setArchiveBefore] = useState(todayTashkent());
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState("");
   const [sort, setSort] = useState("newest");
   const [page, setPage] = useState(0);
   const [preview, setPreview] = useState<FileItem | null>(null);
@@ -94,7 +103,7 @@ export function AdminFileArchive() {
     return () => window.clearTimeout(timer);
   }, [queryInput]);
 
-  useEffect(() => setPage(0), [query, institutionId, criterionId, from, to, kind, sort]);
+  useEffect(() => setPage(0), [query, institutionId, criterionId, from, to, kind, status, sort]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -105,6 +114,7 @@ export function AdminFileArchive() {
     if (from) params.set("from", from);
     if (to) params.set("to", to);
     if (kind) params.set("kind", kind);
+    if (status) params.set("status", status);
     setLoading(true);
     setError("");
 
@@ -128,12 +138,58 @@ export function AdminFileArchive() {
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
 
     return () => controller.abort();
-  }, [query, institutionId, criterionId, from, to, kind, sort, page, reloadKey]);
+  }, [query, institutionId, criterionId, from, to, kind, status, sort, page, reloadKey]);
 
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const visibleFrom = total ? page * PAGE_SIZE + 1 : 0;
   const visibleTo = Math.min(total, (page + 1) * PAGE_SIZE);
-  const hasFilters = Boolean(queryInput || institutionId || criterionId || from || to || kind || sort !== "newest");
+  const hasFilters = Boolean(queryInput || institutionId || criterionId || from || to || kind || status || sort !== "newest");
+  const zipHref = useMemo(() => {
+    const params = new URLSearchParams();
+    if (query) params.set("q", query);
+    if (institutionId) params.set("institutionId", institutionId);
+    if (criterionId) params.set("criterionId", criterionId);
+    if (from) params.set("from", from);
+    if (to) params.set("to", to);
+    if (kind) params.set("kind", kind);
+    if (status) params.set("status", status);
+    return `/api/admin/files/zip?${params.toString()}`;
+  }, [query, institutionId, criterionId, from, to, kind, status]);
+
+  async function postAction(body: Record<string, string>) {
+    setBusy(true);
+    setNotice("");
+    try {
+      const response = await fetch("/api/admin/files", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+      const payload = await response.json().catch(() => ({})) as { count?: number; error?: string };
+      if (!response.ok) throw new Error(payload.error || "Amal bajarilmadi.");
+      return Number(payload.count || 0);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function archiveOld() {
+    if (!archiveBefore) return;
+    if (!window.confirm(`${archiveBefore} sanasigacha yuklangan barcha faol fayllar arxivga o‘tkazilsinmi? Ular baholovchilarga ko‘rinmay qoladi.`)) return;
+    try {
+      const count = await postAction({ action: "archive_before", before: archiveBefore });
+      setNotice(`${count.toLocaleString("uz-UZ")} ta fayl arxivga o‘tkazildi.`);
+      setReloadKey((value) => value + 1);
+    } catch (reason) {
+      setNotice(reason instanceof Error ? reason.message : "Xatolik yuz berdi.");
+    }
+  }
+
+  async function toggleArchive(item: FileItem) {
+    try {
+      await postAction({ action: item.archivedAt ? "restore" : "archive", id: item.id });
+      setNotice(item.archivedAt ? "Fayl arxivdan chiqarildi." : "Fayl arxivga o‘tkazildi.");
+      setReloadKey((value) => value + 1);
+    } catch (reason) {
+      setNotice(reason instanceof Error ? reason.message : "Xatolik yuz berdi.");
+    }
+  }
   const selectedCriterion = useMemo(() => criteria.find((item) => item.id === criterionId), [criteria, criterionId]);
 
   function clearFilters() {
@@ -144,6 +200,7 @@ export function AdminFileArchive() {
     setFrom("");
     setTo("");
     setKind("");
+    setStatus("");
     setSort("newest");
     setPage(0);
   }
@@ -152,7 +209,7 @@ export function AdminFileArchive() {
     <div className="admin-file-header">
       <div>
         <h3>Yuklangan fayllar arxivi</h3>
-        <p>Muassasa, mezon va sana kesimida barcha fayllarni topish, onlayn ko‘rish va yuklab olish mumkin.</p>
+        <p>Muassasa, mezon va sana kesimida barcha fayllarni topish, onlayn ko‘rish va yuklab olish mumkin. Arxivdagi fayllar faqat administratorga ko‘rinadi, baholovchilarga ko‘rsatilmaydi.</p>
       </div>
       <button type="button" className="admin-file-refresh" onClick={() => setReloadKey((value) => value + 1)} disabled={loading}><RefreshCw size={17} className={loading ? "animate-spin" : ""} /> Yangilash</button>
     </div>
@@ -162,6 +219,14 @@ export function AdminFileArchive() {
       <div><span>Muassasalar</span><strong>{stats.institutions.toLocaleString("uz-UZ")}</strong></div>
       <div><span>Jami hajm</span><strong>{formatBytes(stats.bytes)}</strong></div>
       <div><span>Bugun yuklangan</span><strong>{stats.today.toLocaleString("uz-UZ")}</strong></div>
+      <div><span>Arxivda</span><strong>{stats.archived.toLocaleString("uz-UZ")}</strong></div>
+    </div>
+
+    <div className="admin-file-archive-tools">
+      <a className={`admin-file-zip${stats.total ? "" : " disabled"}`} href={stats.total ? zipHref : undefined} aria-disabled={!stats.total}><Download size={16} /> Filtrdagi {stats.total.toLocaleString("uz-UZ")} ta faylni ZIP qilib yuklab olish ({formatBytes(stats.bytes)})</a>
+      <label className="admin-file-date-field"><span>Shu sanagacha</span><input type="date" value={archiveBefore} onChange={(event) => setArchiveBefore(event.target.value)} /></label>
+      <button type="button" className="admin-file-archive-btn" onClick={archiveOld} disabled={busy || !archiveBefore}><Archive size={16} /> Eski fayllarni arxivlash</button>
+      {notice && <span className="admin-file-notice">{notice}</span>}
     </div>
 
     <div className="admin-file-filters admin-file-filters-v2">
@@ -183,6 +248,11 @@ export function AdminFileArchive() {
         <option value="order">BUYRUQ fayllari</option>
         <option value="other">Baholash asoslari</option>
       </select>
+      <select value={status} onChange={(event) => setStatus(event.target.value)} aria-label="Holati">
+        <option value="">Faol va arxiv</option>
+        <option value="active">Faqat faol fayllar</option>
+        <option value="archived">Faqat arxiv</option>
+      </select>
       <label className="admin-file-date-field"><span>Dan</span><input type="date" value={from} max={to || undefined} onChange={(event) => setFrom(event.target.value)} /></label>
       <label className="admin-file-date-field"><span>Gacha</span><input type="date" value={to} min={from || undefined} onChange={(event) => setTo(event.target.value)} /></label>
       <select value={sort} onChange={(event) => setSort(event.target.value)} aria-label="Saralash">
@@ -199,7 +269,7 @@ export function AdminFileArchive() {
         <table>
           <thead><tr><th>Sana</th><th>Muassasa</th><th>Mezon</th><th>Fayl</th><th>Hajm</th><th>Amal</th></tr></thead>
           <tbody>{items.map((item) => <tr key={item.id}>
-            <td className="admin-file-date">{formatDate(item)}</td>
+            <td className="admin-file-date">{formatDate(item)}{item.archivedAt && <small className="admin-file-archived-badge">Arxiv</small>}</td>
             <td><strong className="admin-file-institution">{item.institutionName}</strong></td>
             <td><span className="admin-file-criterion">{item.criterionTitle}</span><small>{item.sourceLabel}{item.roundDay ? ` · ${item.roundDay}-kunlik` : ""}</small></td>
             <td><div className="admin-file-filecell"><span className="admin-file-ext">{item.extension || "FAYL"}</span><FileName item={item} /></div></td>
@@ -207,6 +277,7 @@ export function AdminFileArchive() {
             <td><div className="admin-file-actions">
               {canPreview(item) && <button type="button" onClick={() => setPreview(item)}><Eye size={16} /> Ko‘rish</button>}
               <a href={`/api/files?id=${encodeURIComponent(item.id)}`}><Download size={16} /> Yuklash</a>
+              <button type="button" onClick={() => toggleArchive(item)} disabled={busy}>{item.archivedAt ? <><ArchiveRestore size={16} /> Arxivdan chiqarish</> : <><Archive size={16} /> Arxivlash</>}</button>
             </div></td>
           </tr>)}</tbody>
         </table>
@@ -214,7 +285,7 @@ export function AdminFileArchive() {
 
       <div className="admin-file-mobile-list">
         {items.map((item) => <article className="admin-file-card" key={item.id}>
-          <div className="admin-file-card-top"><span>{formatDate(item)}</span><span>{formatBytes(item.sizeBytes)}</span></div>
+          <div className="admin-file-card-top"><span>{formatDate(item)}{item.archivedAt && <small className="admin-file-archived-badge">Arxiv</small>}</span><span>{formatBytes(item.sizeBytes)}</span></div>
           <strong className="admin-file-card-institution">{item.institutionName}</strong>
           <div className="admin-file-card-criterion">{item.criterionTitle}</div>
           <small>{item.sourceLabel}{item.roundDay ? ` · ${item.roundDay}-kunlik` : ""}</small>
@@ -222,6 +293,7 @@ export function AdminFileArchive() {
           <div className="admin-file-actions admin-file-actions-mobile">
             {canPreview(item) && <button type="button" onClick={() => setPreview(item)}><Eye size={16} /> Online ko‘rish</button>}
             <a href={`/api/files?id=${encodeURIComponent(item.id)}`}><Download size={16} /> Yuklab olish</a>
+            <button type="button" onClick={() => toggleArchive(item)} disabled={busy}>{item.archivedAt ? <><ArchiveRestore size={16} /> Arxivdan chiqarish</> : <><Archive size={16} /> Arxivlash</>}</button>
           </div>
         </article>)}
       </div>

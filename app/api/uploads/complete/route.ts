@@ -126,7 +126,7 @@ export async function POST(request: Request) {
     const storageProvider = "railway";
 
     if (intent.kind === "institution_order") {
-      const existing = await db.pool.query("SELECT id FROM attachments WHERE institution_id = $1 AND source = 'institution_order' LIMIT 1", [intent.institutionId]);
+      const existing = await db.pool.query("SELECT id FROM attachments WHERE institution_id = $1 AND source = 'institution_order' AND archived_at IS NULL LIMIT 1", [intent.institutionId]);
       if (existing.rowCount) {
         await cleanUp(uploadId, intent);
         return Response.json({ error: "BUYRUQ avval yuklangan. Qayta yuklash bloklangan." }, { status: 409 });
@@ -188,7 +188,7 @@ export async function POST(request: Request) {
         let recurrenceLocked = false;
         if (patch62IsDaily(criterion.deadline)) {
           const sameDay = await client.query(
-            "SELECT created_at AS \"createdAt\" FROM attachments WHERE institution_id=$1 AND criterion_id=$2 AND source IN ('institution','institution_submission') AND (created_at AT TIME ZONE 'Asia/Tashkent')::date >= DATE '2026-09-14' AND (created_at AT TIME ZONE 'Asia/Tashkent')::date = (NOW() AT TIME ZONE 'Asia/Tashkent')::date ORDER BY created_at DESC LIMIT 1",
+            "SELECT created_at AS \"createdAt\" FROM attachments WHERE institution_id=$1 AND criterion_id=$2 AND source IN ('institution','institution_submission') AND archived_at IS NULL AND (created_at AT TIME ZONE 'Asia/Tashkent')::date >= DATE '2026-09-14' AND (created_at AT TIME ZONE 'Asia/Tashkent')::date = (NOW() AT TIME ZONE 'Asia/Tashkent')::date ORDER BY created_at DESC LIMIT 1",
             [criterionIntent.institutionId, criterionIntent.criterionId],
           );
           recurrenceLocked = sameDay.rows.length > 0;
@@ -197,7 +197,7 @@ export async function POST(request: Request) {
           const intervalDays = patch62RollingDays(criterion.deadline);
           if (intervalDays) {
             const recentResult = await client.query(
-              "SELECT created_at AS \"createdAt\" FROM attachments WHERE institution_id=$1 AND criterion_id=$2 AND source IN ('institution','institution_submission') AND (created_at AT TIME ZONE 'Asia/Tashkent')::date >= DATE '2026-09-14' ORDER BY created_at DESC LIMIT 1",
+              "SELECT created_at AS \"createdAt\" FROM attachments WHERE institution_id=$1 AND criterion_id=$2 AND source IN ('institution','institution_submission') AND archived_at IS NULL AND (created_at AT TIME ZONE 'Asia/Tashkent')::date >= DATE '2026-09-14' ORDER BY created_at DESC LIMIT 1",
               [criterionIntent.institutionId, criterionIntent.criterionId],
             );
             const lastCreatedAt = recentResult.rows[0]?.createdAt ? new Date(recentResult.rows[0].createdAt).getTime() : 0;

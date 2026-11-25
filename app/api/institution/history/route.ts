@@ -26,6 +26,7 @@ export async function GET(request: Request) {
               created_at AS "createdAt"
          FROM attachments
         WHERE institution_id = $1
+          AND archived_at IS NULL
           AND source IN ('institution_submission', 'institution_order')
         ORDER BY created_at DESC
         LIMIT 5000`,
