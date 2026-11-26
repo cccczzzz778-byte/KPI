@@ -315,10 +315,12 @@ export function EvaluatorReferencePanel(props: AnyRecord) {
   const refresh = props.onRefresh ?? props.refresh;
   const direction = commissionLabel(String(session.commission || ""));
   const criteria = useMemo(() => { const key = commissionKey(session.commission); return allCriteria.filter((item: AnyRecord) => !key || commissionKey(item.commission) === key); }, [session.commission]);
+  const directionMax = ({ijro:10.3,birlamchi:29.4,statsionar:23.5,raqam:13.3,moliya:23.5} as Record<string,number>)[commissionKey(session.commission)] ?? 0;
+  const criterionMax = criteria.length ? directionMax / criteria.length : 0;
   const criterionIds = useMemo(() => new Set(criteria.map((item: AnyRecord) => String(item.id))), [criteria]);
   const institutions = useMemo(() => (Array.isArray(data.institutions) ? data.institutions : []).filter((item: AnyRecord) => item.active !== false && item.active !== 0)
-    .filter((item: AnyRecord) => !excludedInstitutionIds.includes(String(item.id))).slice().sort((a: AnyRecord, b: AnyRecord) => String(a.name).localeCompare(String(b.name), "uz")), [data.institutions]);
-  const evaluations = Array.isArray(data.evaluations) ? data.evaluations : [];
+    .filter((item: AnyRecord) => !excludedInstitutionIds.includes(String(item.id))).slice().sort((a: AnyRecord, b: AnyRecord) => String(a.name).localeCompare(String(b.name), "uz")), [data.institutions, excludedInstitutionIds]);
+  
   const dailyEvaluations = Array.isArray(data.dailyEvaluations) ? data.dailyEvaluations : [];
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Tashkent" }).format(new Date());
   const [fileCounts, setFileCounts] = useState<Record<string, number>>({});
@@ -360,12 +362,14 @@ export function EvaluatorReferencePanel(props: AnyRecord) {
       && criterionIds.has(String(item.criterionId)));
     const done = new Set(rows.map((item: AnyRecord) => String(item.criterionId))).size;
     const total = criteria.length;
-    return { done, total, percent: total ? Math.min(100, Math.round((done / total) * 100)) : 0 };
+    const earned = Array.from(new Map<string, number>(rows.map((item: AnyRecord) => [String(item.criterionId), Math.max(0, Math.min(2, Number(item.score) || 0))])).values()).reduce((sum, score) => sum + score, 0);
+    const score = total ? Number((earned / (total * 2) * directionMax).toFixed(1)) : 0;
+    return { done, total, score, percent: total ? Math.min(100, Math.round((done / total) * 100)) : 0 };
   }
 
   return <div className="evaluator-reference-root">
     <section className="evaluator-ref-banner">
-      <div><ClipboardCheck size={25} /><div><h2>Baholovchi ({direction})</h2><p>Faqat shu yo‘nalishdagi barcha baholash mezonlari ko‘rinadi <b>· 20 ball</b> <b>· Har bir mezon uchun majburiy izoh</b></p></div></div>
+      <div><ClipboardCheck size={25} /><div><h2>Baholovchi ({direction})</h2><p>Faqat shu yo‘nalishdagi barcha baholash mezonlari ko‘rinadi <b>· {directionMax} ball · {criteria.length} mezon · 1 mezon maksimum {criterionMax.toFixed(3)} KPI ball</b> <b>· Har bir mezon uchun majburiy izoh</b></p></div></div>
       <div className="evaluator-ref-upload-limit"><UploadCloud size={23} /><span><strong>30 MB</strong><small>har bir fayl uchun</small></span></div>
     </section>
 
@@ -374,12 +378,12 @@ export function EvaluatorReferencePanel(props: AnyRecord) {
       <ArchivePanel roundDay={roundDay} />
 
       <div className="evaluator-ref-institutions">
-        {institutions.length === 0 ? <div className="evaluator-ref-state">Baholash uchun faol muassasa topilmadi.</div> : institutions.map((institution: AnyRecord) => {
+        {institutions.length === 0 ? <div className="evaluator-ref-state">Baholash uchun faol muassasa topilmadi.</div> : institutions.slice().sort((a: AnyRecord,b: AnyRecord) => { const x=institutionProgress(String(a.id)), y=institutionProgress(String(b.id)); return Number(y.done>0)-Number(x.done>0) || y.score-x.score || String(a.name).localeCompare(String(b.name),"uz"); }).map((institution: AnyRecord) => {
           const progress = institutionProgress(String(institution.id));
           return <article className="evaluator-ref-institution" key={institution.id}>
             <div className="evaluator-ref-building"><Building2 size={22} /></div>
             <div className="evaluator-ref-inst-name"><strong>{institution.name}</strong><span>{institution.district || institution.type || "Tibbiyot muassasasi"}</span></div>
-            <div className="evaluator-ref-score"><strong>{progress.done} / {progress.total || criteria.length}</strong><span>Mezonlar</span></div>
+            <div className="evaluator-ref-score"><strong>{progress.done} / {progress.total || criteria.length}</strong><span>Mezonlar · {progress.score}/{directionMax} KPI ball</span></div>
             <div className="evaluator-ref-progress"><div><span style={{ width: `${progress.percent}%` }} /></div><small>{progress.percent}%</small></div>
             <div className="evaluator-ref-file-count"><FileText size={18} /><span><small>Yuklangan mezon</small><strong>{fileCounts[String(institution.id)] ?? 0} ta</strong></span></div>
             <div className="evaluator-ref-status">{progress.percent === 100 ? <CheckCircle2 size={18} /> : <CalendarDays size={18} />}<span><strong>{progress.percent === 100 ? "Baholash yakunlangan" : `Bugungi baholash`}</strong><small>{progress.percent === 100 ? "Barcha mezonlar" : "Baholash jarayoni"}</small></span></div>
