@@ -118,12 +118,8 @@ export async function PUT(request: Request) {
     }
 
     if (body.byteLength !== Number(intent.sizeBytes)) {
-      console.warn("upload prepare size synchronized after verified checksum", { uploadId, preparedSize: Number(intent.sizeBytes), receivedLength: body.byteLength });
-      intent.sizeBytes = body.byteLength;
-      await db.pool.query(
-        "UPDATE upload_intents SET payload=$2::jsonb WHERE id=$1 AND token=$3",
-        [uploadId, JSON.stringify(intent), tokenHash],
-      );
+      console.warn("upload size mismatch", { uploadId, preparedSize: Number(intent.sizeBytes), receivedLength: body.byteLength });
+      return Response.json({ error: "Fayl hajmi dastlabki hajmga mos emas. Faylni qayta tanlab yuklang." }, { status: 400 });
     }
 
     const ext = extension(String(intent.filename || ""));
