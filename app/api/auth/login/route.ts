@@ -123,16 +123,6 @@ export async function POST(request: Request) {
       return Response.json({ error: "Login yoki parol noto‘g‘ri." }, { status: 401, headers: { "cache-control": "no-store" } });
     }
 
-    // Hozircha faqat administrator va baholovchilar kira oladi (muassasa va monitoring hisoblari yopiq)
-    if (!["admin", "evaluator"].includes(String(user!.role || ""))) {
-      await db.pool.query("DELETE FROM sessions WHERE user_email=$1", [user!.email]).catch(() => undefined);
-      await securityEvent(db, "login_blocked_non_admin", identifierHash, ipHash, { role: user!.role });
-      return Response.json(
-        { error: "Tizim vaqtincha faqat administrator va baholovchilar uchun ochiq.", code: "ADMIN_ONLY" },
-        { status: 403, headers: { "cache-control": "no-store" } },
-      );
-    }
-
     const rawToken = randomBytes(32).toString("base64url");
     const tokenHash = sessionDigest(rawToken);
     const userAgentHash = privacyDigest((request.headers.get("user-agent") || "unknown").slice(0, 512));
