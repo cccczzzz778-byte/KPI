@@ -274,17 +274,15 @@ export default function KpiApp({ mode = "monitoring" }: { mode?: PanelMode }) {
   const evaluationMap = useMemo(() => new Map(data.evaluations.map((item) => [`${item.institutionId}:${item.roundDay}:${item.criterionId}`, Number(item.score)])), [data.evaluations]);
   const kpiMonthOptions = useMemo(() => { const keys=new Set<string>([currentKpiMonthKey()]); data.dailyEvaluations.forEach((item)=>keys.add(kpiMonthKeyForDate(item.evaluationDate))); return Array.from(keys).sort((a,b)=>b.localeCompare(a)); }, [data.dailyEvaluations]);
   const historicalEvaluationMap = useMemo(() => {
-    const grouped = new Map<string, { sum: number; count: number }>();
+    const grouped = new Map<string, DailyEvaluation>();
     const bounds=kpiMonthBounds(selectedKpiMonth);
     data.dailyEvaluations.forEach((item) => {
       if(item.evaluationDate<bounds.start||item.evaluationDate>bounds.end)return;
       const key = `${item.institutionId}:${item.criterionId}`;
-      const current = grouped.get(key) ?? { sum: 0, count: 0 };
-      current.sum += Math.max(0, Math.min(2, Number(item.score) || 0));
-      current.count += 1;
-      grouped.set(key, current);
+      const current = grouped.get(key);
+      if (!current || item.evaluationDate > current.evaluationDate || (item.evaluationDate === current.evaluationDate && item.updatedAt > current.updatedAt)) grouped.set(key, item);
     });
-    return new Map(Array.from(grouped.entries()).map(([key, value]) => [key, value.count ? value.sum / value.count : 0]));
+    return new Map(Array.from(grouped.entries()).map(([key, value]) => [key, Math.max(0, Math.min(2, Number(value.score) || 0))]));
   }, [data.dailyEvaluations, selectedKpiMonth]);
   const ranking = useMemo(() => data.institutions.filter((item) => item.active !== 0).map((institution) => {
     const override = getMonthOverride(selectedKpiMonth, institution.id);
@@ -310,8 +308,8 @@ export default function KpiApp({ mode = "monitoring" }: { mode?: PanelMode }) {
       const criterion = criteria.find((item) => item.id === evaluation.criterionId);
       return Boolean(criterion && !excludedDirections.has(criterion.commission));
     });
-    return { institution, parts, total, hasEvaluation };
-  }).sort((a, b) => b.total - a.total || a.institution.name.localeCompare(b.institution.name)), [data, historicalEvaluationMap, commissionExclusions, selectedKpiMonth]);
+    return { institution, parts, total, hasEvaluation, applicableCount: criteria.filter((criterion) => !excludedDirections.has(criterion.commission)).length, excludedDirections: Array.from(excludedDirections) };
+  }).sort((a, b) => Number(b.hasEvaluation) - Number(a.hasEvaluation) || b.total - a.total || b.applicableCount - a.applicableCount || a.institution.name.localeCompare(b.institution.name, "uz")), [data, historicalEvaluationMap, commissionExclusions, selectedKpiMonth]);
 
   const evaluated = ranking.filter((row) => row.hasEvaluation);
   const average = evaluated.length ? Number((evaluated.reduce((sum, row) => sum + row.total, 0) / evaluated.length).toFixed(1)) : 0;
@@ -525,7 +523,7 @@ export default function KpiApp({ mode = "monitoring" }: { mode?: PanelMode }) {
   );
 }
 
-function MonitoringPanel({ data, ranking, evaluatedCount, average, selectedRound, selectedMonth, monthOptions, onMonthChange, onRefresh, onOpenEvaluation }: { data: DashboardData; ranking: Array<{ institution: Institution; parts: Record<CommissionKey, number>; total: number; hasEvaluation: boolean }>; evaluatedCount: number; average: number; selectedRound: number; selectedMonth:string; monthOptions:string[]; onMonthChange:(value:string)=>void; onRefresh: () => void; onOpenEvaluation: (institution: Institution) => void }) {
+function MonitoringPanel({ data, ranking, evaluatedCount, average, selectedRound, selectedMonth, monthOptions, onMonthChange, onRefresh, onOpenEvaluation }: { data: DashboardData; ranking: Array<{ institution: Institution; parts: Record<CommissionKey, number>; total: number; hasEvaluation: boolean; applicableCount: number; excludedDirections: CommissionKey[] }>; evaluatedCount: number; average: number; selectedRound: number; selectedMonth:string; monthOptions:string[]; onMonthChange:(value:string)=>void; onRefresh: () => void; onOpenEvaluation: (institution: Institution) => void }) {
   return <><section className="metric-grid" aria-label="KPI umumiy ko‘rsatkichlari"><article className="metric-card"><div className="metric-icon blue"><Building2 /></div><div><span>Muassasalar</span><strong>{ranking.length}</strong><small>faol muassasa</small></div></article><article className="metric-card"><div className="metric-icon teal"><FileCheck2 /></div><div><span>Baholangan</span><strong>{evaluatedCount}</strong><small>{kpiMonthLabel(selectedMonth)}</small></div></article><article className="metric-card"><div className="metric-icon violet"><BarChart3 /></div><div><span>O‘rtacha KPI</span><strong>{average}<em>/100</em></strong><small>{kpiMonthLabel(selectedMonth)}</small></div></article><article className="metric-card"><div className="metric-icon amber"><Paperclip /></div><div><span>Asoslovchi fayllar</span><strong>{data.attachments.length}</strong><small>markaziy omborda</small></div></article></section><CommissionCards /><PeriodComparisonPanel mode="monitoring" /><section className="workspace-panel"><div className="workspace-toolbar"><h3 className="panel-heading"><BarChart3 /> Muassasalar reytingi va asoslari</h3><div className="monitor-month-tools"><Select value={selectedMonth} onValueChange={onMonthChange}><SelectTrigger className="kpi-month-select"><SelectValue /></SelectTrigger><SelectContent>{monthOptions.map((month)=><SelectItem key={month} value={month}>{kpiMonthLabel(month)}</SelectItem>)}</SelectContent></Select><Button variant="outline" size="sm" onClick={onRefresh}><RefreshCw /> Yangilash</Button></div></div><RankingTable ranking={ranking} onOpen={onOpenEvaluation} actionLabel="Asoslarni ko‘rish" /></section></>;
 }
 
@@ -566,8 +564,8 @@ function CommissionCards() {
   return <section className="commission-grid">{commissions.map((commission) => { const Icon = iconByCommission[commission.id]; return <article key={commission.id} className="commission-card" style={{ "--commission": commission.color } as React.CSSProperties}><div className="commission-topline"><span>{commission.code}</span><Icon /></div><h3>{commission.title}</h3><div className="commission-foot"><span>{criteria.filter((item) => item.commission === commission.id).length} ta mezon</span><strong>{getCommissionMaxScore(commission.id)} ball</strong></div></article>; })}</section>;
 }
 
-function RankingTable({ ranking, onOpen, actionLabel }: { ranking: Array<{ institution: Institution; parts: Record<CommissionKey, number>; total: number; hasEvaluation: boolean }>; onOpen: (institution: Institution) => void; actionLabel: string }) {
-  return <Table><TableHeader><TableRow><TableHead className="rank-col">#</TableHead><TableHead>Muassasa</TableHead>{commissions.map((commission) => <TableHead key={commission.id} className="score-col">{commission.short}</TableHead>)}<TableHead className="total-col">Jami</TableHead><TableHead>Holat</TableHead><TableHead /></TableRow></TableHeader><TableBody>{ranking.map((row, index) => { const status = scoreStatus(row.total, row.hasEvaluation); return <TableRow key={row.institution.id}><TableCell className="rank-col"><span className="rank-number">{index + 1}</span></TableCell><TableCell className="institution-cell"><strong>{row.institution.name}</strong><span>{row.institution.district} · {row.institution.type}</span></TableCell>{commissions.map((commission) => <TableCell key={commission.id} className="score-col"><strong>{row.parts[commission.id]}</strong><span>/{getCommissionMaxScore(commission.id)}</span></TableCell>)}<TableCell className="total-col"><strong>{row.total}</strong><span>/100</span></TableCell><TableCell><span className={`status-pill ${status.className}`}>{status.label}</span></TableCell><TableCell className="action-col"><Button variant="ghost" size="sm" onClick={() => onOpen(row.institution)}>{actionLabel} <ChevronRight /></Button></TableCell></TableRow>; })}</TableBody></Table>;
+function RankingTable({ ranking, onOpen, actionLabel }: { ranking: Array<{ institution: Institution; parts: Record<CommissionKey, number>; total: number; hasEvaluation: boolean; applicableCount: number; excludedDirections: CommissionKey[] }>; onOpen: (institution: Institution) => void; actionLabel: string }) {
+  return <Table><TableHeader><TableRow><TableHead className="rank-col">#</TableHead><TableHead>Muassasa</TableHead>{commissions.map((commission) => <TableHead key={commission.id} className="score-col">{commission.short}</TableHead>)}<TableHead className="total-col">Jami</TableHead><TableHead>Holat</TableHead><TableHead /></TableRow></TableHeader><TableBody>{ranking.map((row, index) => { const status = scoreStatus(row.total, row.hasEvaluation); return <TableRow key={row.institution.id}><TableCell className="rank-col"><span className="rank-number">{index + 1}</span></TableCell><TableCell className="institution-cell"><strong>{row.institution.name}</strong><span>{row.institution.district} · {row.institution.type} · {row.applicableCount} mezon</span></TableCell>{commissions.map((commission) => <TableCell key={commission.id} className="score-col">{row.excludedDirections.includes(commission.id) ? <strong>N/A</strong> : <><strong>{row.parts[commission.id]}</strong><span>/{getCommissionMaxScore(commission.id)}</span></>}</TableCell>)}<TableCell className="total-col"><strong>{row.total}</strong><span>/100</span></TableCell><TableCell><span className={`status-pill ${status.className}`}>{status.label}</span></TableCell><TableCell className="action-col"><Button variant="ghost" size="sm" onClick={() => onOpen(row.institution)}>{actionLabel} <ChevronRight /></Button></TableCell></TableRow>; })}</TableBody></Table>;
 }
 
 function EvaluationSection({ commissionId, scores, notes, files, data, institution, roundDay, readOnly, onScore, onNote, onFile, onDeleteAttachment }: { commissionId: CommissionKey; scores: Record<string, number>; notes: Record<string, string>; files: Record<string, File | null>; data: DashboardData; institution: Institution | null; roundDay: number; readOnly: boolean; onScore: (criterionId: string, score: number) => void; onNote: (criterionId: string, note: string) => void; onFile: (criterionId: string, file: File | null) => void; onDeleteAttachment: (id: string) => void }) {
