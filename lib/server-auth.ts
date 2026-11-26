@@ -93,12 +93,6 @@ export async function requireAppUser(request: Request): Promise<AppUser> {
   if (!existing) throw new AccessError("Sessiya tugagan. Qayta kiring.", 401);
   if (!existing.active) throw new AccessError("Foydalanuvchi hisobi bloklangan.", 403);
 
-  // Hozircha faqat administrator va baholovchilar sessiyasi amal qiladi
-  if (!["admin", "evaluator"].includes(String(existing.role || ""))) {
-    await db.pool.query("DELETE FROM sessions WHERE token=$1", [tokenHash]).catch(() => undefined);
-    throw new AccessError("Tizim vaqtincha faqat administrator va baholovchilar uchun ochiq.", 403);
-  }
-
   const currentUaHash = privacyDigest((request.headers.get("user-agent") || "unknown").slice(0, 512));
   if (existing.sessionUserAgentHash && !sameDigest(existing.sessionUserAgentHash, currentUaHash)) {
     await db.pool.query("DELETE FROM sessions WHERE token=$1", [tokenHash]).catch(() => undefined);
