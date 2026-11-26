@@ -49,33 +49,25 @@ export async function GET(request: Request) {
 
     const db = getKpiDatabase();
 
-    // PATCH106_DASHBOARD_ADMIN_ONLY
+    // Muassasa foydalanuvchilari rahbariyat dashboardini ko'rmaydi (o'z sahifasiga yo'naltiriladi).
     const dashboardSessionToken = sessionTokenFromRequest(request);
-    if (!dashboardSessionToken) {
-      return Response.json(
-        { error: "Dashboard faqat administrator uchun ochiq.", code: "ADMIN_ONLY" },
-        { status: 403, headers: { "cache-control": "no-store" } },
+    if (dashboardSessionToken) {
+      const dashboardSession = await db.pool.query(
+        `SELECT u.role
+           FROM sessions s
+           JOIN users u ON u.email = s.user_email
+          WHERE s.token = $1
+            AND s.expires_at > NOW()
+            AND u.active = 1
+          LIMIT 1`,
+        [sessionDigest(dashboardSessionToken)],
       );
-    }
-    const dashboardSession = await db.pool.query(
-      `SELECT u.role
-         FROM sessions s
-         JOIN users u ON u.email = s.user_email
-        WHERE s.token = $1
-          AND s.expires_at > NOW()
-          AND u.active = 1
-        LIMIT 1`,
-      [sessionDigest(dashboardSessionToken)],
-    );
-    if (String(dashboardSession.rows[0]?.role || "") !== "admin") {
-      // Baholovchi sessiyasi o'chirilmaydi: u faqat umumiy dashboardni ko'ra olmaydi
-      if (dashboardSession.rows[0] && String(dashboardSession.rows[0].role || "") !== "evaluator") {
-        await db.pool.query("DELETE FROM sessions WHERE token=$1", [sessionDigest(dashboardSessionToken)]).catch(() => undefined);
+      if (String(dashboardSession.rows[0]?.role || "") === "institution") {
+        return Response.json(
+          { error: "Muassasa foydalanuvchilari uchun Dashboard yopiq.", code: "INSTITUTION_DASHBOARD_BLOCKED" },
+          { status: 403, headers: { "cache-control": "no-store" } },
+        );
       }
-      return Response.json(
-        { error: "Dashboard faqat administrator uchun ochiq.", code: "ADMIN_ONLY" },
-        { status: 403, headers: { "cache-control": "no-store" } },
-      );
     }
 
     const institutionPromise = db.pool.query(`
