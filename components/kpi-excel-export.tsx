@@ -6,12 +6,12 @@ export default function KpiExcelExport() {
   return <section className="kpi-export-only" aria-label="KPI Excel hisoboti">
     <div className="kpi-export-copy">
       <strong>Excel hisobot olish</strong>
-      <span>Namunadagi kabi 6 listli Monitoring Excel hisoboti.</span>
+      <span>Barcha oylar bo‘yicha mezonlar, oylik jami va o‘rtacha KPI ballari.</span>
     </div>
     <div className="kpi-export-actions">
-      <a href="/api/reports/monitoring-scores" className="kpi-export-button">
+      <a href="/api/reports/monitoring-scores?month=all" className="kpi-export-button">
         <Download size={16} />
-        Monitoring Excel (6 list)
+        Barcha oylar Excel (mezonlar kesimida)
       </a>
       <form action="/api/reports/monitoring-scores" method="get" className="kpi-export-monthly">
         <label htmlFor="monitoring-month">Hisobot oyi</label>
