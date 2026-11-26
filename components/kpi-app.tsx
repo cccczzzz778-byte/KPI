@@ -134,7 +134,7 @@ function cumulative60Score(rows: DailyEvaluation[], institutionId: string, crite
   return total;
 }
 
-const commissionMaxScores: Record<CommissionKey, number> = {"ijro":10.3,"birlamchi":29.4,"statsionar":23.5,"raqam":13.3,"moliya":23.5};
+const commissionMaxScores: Record<CommissionKey, number> = {"ijro":10.6,"birlamchi":27.3,"statsionar":19.7,"raqam":22.7,"moliya":19.7};
 
 function getCommissionMaxScore(commissionId: CommissionKey) {
   return commissionMaxScores[commissionId];

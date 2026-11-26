@@ -315,7 +315,7 @@ export function EvaluatorReferencePanel(props: AnyRecord) {
   const refresh = props.onRefresh ?? props.refresh;
   const direction = commissionLabel(String(session.commission || ""));
   const criteria = useMemo(() => { const key = commissionKey(session.commission); return allCriteria.filter((item: AnyRecord) => !key || commissionKey(item.commission) === key); }, [session.commission]);
-  const directionMax = ({ijro:10.3,birlamchi:29.4,statsionar:23.5,raqam:13.3,moliya:23.5} as Record<string,number>)[commissionKey(session.commission)] ?? 0;
+  const directionMax = ({ijro:10.6,birlamchi:27.3,statsionar:19.7,raqam:22.7,moliya:19.7} as Record<string,number>)[commissionKey(session.commission)] ?? 0;
   const criterionMax = criteria.length ? directionMax / criteria.length : 0;
   const criterionIds = useMemo(() => new Set(criteria.map((item: AnyRecord) => String(item.id))), [criteria]);
   const institutions = useMemo(() => (Array.isArray(data.institutions) ? data.institutions : []).filter((item: AnyRecord) => item.active !== false && item.active !== 0)

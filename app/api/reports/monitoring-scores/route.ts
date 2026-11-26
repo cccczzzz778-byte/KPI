@@ -9,7 +9,7 @@ export const runtime="nodejs";
 export const dynamic="force-dynamic";
 
 const KEYS:CommissionKey[]=["ijro","birlamchi","statsionar","raqam","moliya"];
-const MAX:Record<CommissionKey,number>={ijro:10.3,birlamchi:29.4,statsionar:23.5,raqam:13.3,moliya:23.5};
+const MAX:Record<CommissionKey,number>={ijro:10.6,birlamchi:27.3,statsionar:19.7,raqam:22.7,moliya:19.7};
 const SHEET_NAMES:Record<CommissionKey,string>={
   ijro:"Ijro intizom",
   birlamchi:"Birlamchi",
@@ -18,11 +18,11 @@ const SHEET_NAMES:Record<CommissionKey,string>={
   moliya:"Moliya va infratuzilma",
 };
 const HEADERS:Record<CommissionKey,string>={
-  ijro:"Ijro intizomi (10,3)",
-  birlamchi:"Birlamchi yordam (29,4)",
-  statsionar:"Statsionar xizmat (23,5)",
-  raqam:"Raqamlashtirish    (13,3)",
-  moliya:"Moliya va infratuzilma (23,5)",
+  ijro:"Ijro intizomi (10,6)",
+  birlamchi:"Birlamchi yordam (27,3)",
+  statsionar:"Statsionar xizmat (19,7)",
+  raqam:"Raqamlashtirish    (22,7)",
+  moliya:"Moliya va infratuzilma (19,7)",
 };
 const TITLE:Record<CommissionKey,string>={
   ijro:"BUXORO VILOYATI TIBBIYOT MUASSASALARI — IJRO INTIZOM KPI BALLARI",
@@ -226,7 +226,7 @@ export async function GET(request:Request){
     // PATCH100_NA_FORMULA
     for(let r=5;r<5+rows.length;r++){
       const currentResult=Number(sheet.getCell(r,9).value||0);
-      const formula="IFERROR(ROUND(SUM(D"+r+":H"+r+")/(IF(D"+r+"=\"N/A\",0,10.3)+IF(E"+r+"=\"N/A\",0,29.4)+IF(F"+r+"=\"N/A\",0,23.5)+IF(G"+r+"=\"N/A\",0,13.3)+IF(H"+r+"=\"N/A\",0,23.5))*100,1),0)";
+      const formula="IFERROR(ROUND(SUM(D"+r+":H"+r+")/(IF(D"+r+"=\"N/A\",0,10.6)+IF(E"+r+"=\"N/A\",0,27.3)+IF(F"+r+"=\"N/A\",0,19.7)+IF(G"+r+"=\"N/A\",0,22.7)+IF(H"+r+"=\"N/A\",0,19.7))*100,1),0)";
       sheet.getCell(r,9).value={formula,result:currentResult};
     }
     workbook.calcProperties.fullCalcOnLoad=true;

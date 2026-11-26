@@ -7,7 +7,7 @@ type Key = "ijro" | "birlamchi" | "statsionar" | "raqam" | "moliya";
 type ReportRow = { id:string; name:string; district:string; parts:Record<Key,number>; total:number; evaluated:boolean; fileCount:number; excludedDirections?:Key[] };
 type Report = { selectedDate:string; totalInstitutions:number; evaluatedCount:number; averageScore:number; maxAverageScore:number; fileCount:number; rows:ReportRow[]; error?:string };
 const names:Record<Key,string>={ijro:"Ijro intizomi",birlamchi:"Birlamchi yordam",statsionar:"Statsionar xizmat",raqam:"Raqamlashtirish",moliya:"Moliya va infratuzilma"};
-const maximum:Record<Key,number>={ijro:10.3,birlamchi:29.4,statsionar:23.5,raqam:13.3,moliya:23.5};
+const maximum:Record<Key,number>={ijro:10.6,birlamchi:27.3,statsionar:19.7,raqam:22.7,moliya:19.7};
 const keys:Key[]=["ijro","birlamchi","statsionar","raqam","moliya"];
 
 function tashkentDate(){return new Intl.DateTimeFormat("uz-UZ",{timeZone:"Asia/Tashkent",year:"numeric",month:"long",day:"2-digit",weekday:"long"}).format(new Date())}

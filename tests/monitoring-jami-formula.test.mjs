@@ -12,10 +12,10 @@ test("JAMI BALL cells use the N/A-aware Excel formula", () => {
 
   assert.match(formulaBlock, /IFERROR\(ROUND\(SUM\(D/);
   assert.match(formulaBlock, /N\/A/);
-  assert.match(formulaBlock, /10\.3/);
-  assert.match(formulaBlock, /29\.4/);
-  assert.match(formulaBlock, /13\.3/);
-  assert.ok((formulaBlock.match(/23\.5/g) ?? []).length >= 2);
+  assert.match(formulaBlock, /10\.6/);
+  assert.match(formulaBlock, /27\.3/);
+  assert.match(formulaBlock, /22\.7/);
+  assert.ok((formulaBlock.match(/19\.7/g) ?? []).length >= 2);
   assert.match(formulaBlock, /sheet\.getCell\(r,9\)\.value=\{formula,result:currentResult\}/);
   assert.match(formulaBlock, /fullCalcOnLoad=true/);
 });
