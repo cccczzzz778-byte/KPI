@@ -41,8 +41,18 @@ function recurrenceIntervalDays(deadline: unknown) {
 
 async function cleanUp(uploadId: string, intent?: UploadIntent | null) {
   const db = getKpiDatabase();
+  // Never delete an object referenced by a committed attachment.
+  if (intent?.objectKey && isR2Configured()) {
+    try {
+      const referenced = await db.pool.query("SELECT 1 FROM attachments WHERE object_key=$1 LIMIT 1", [intent.objectKey]);
+      if (!referenced.rowCount) await deleteR2Object(intent.objectKey);
+    } catch (error) {
+      // On database or storage failure, preserve the object rather than risk data loss.
+      console.error("upload cleanup deferred", error);
+      return;
+    }
+  }
   await db.pool.query("DELETE FROM upload_intents WHERE id=$1", [uploadId]).catch(() => undefined);
-  if (intent?.objectKey && isR2Configured()) await deleteR2Object(intent.objectKey).catch(() => undefined);
 }
 
 async function verifyStored(intent: UploadIntent) {
@@ -151,7 +161,7 @@ export async function POST(request: Request) {
         await client.query("ROLLBACK");
         throw error;
       } finally { client.release(); }
-      await db.pool.query("DELETE FROM upload_intents WHERE id=$1", [uploadId]);
+      await db.pool.query("DELETE FROM upload_intents WHERE id=$1", [uploadId]).catch((error) => console.error("committed upload intent cleanup failed", error));
       return Response.json({ uploaded: true, id, storageProvider, attachment: { id, filename: intent.filename, sizeBytes: intent.sizeBytes } }, { status: 201 });
     }
 
@@ -239,7 +249,7 @@ export async function POST(request: Request) {
         }
         throw error;
       } finally { client.release(); }
-      await db.pool.query("DELETE FROM upload_intents WHERE id=$1", [uploadId]);
+      await db.pool.query("DELETE FROM upload_intents WHERE id=$1", [uploadId]).catch((error) => console.error("committed upload intent cleanup failed", error));
       return Response.json({ storageProvider, attachment: { id, filename: criterionIntent.filename, sizeBytes: criterionIntent.sizeBytes, dailyLocked: true, recurrenceLocked: true } }, { status: 201 });
     }
 
@@ -257,7 +267,7 @@ export async function POST(request: Request) {
       await client.query("ROLLBACK");
       throw error;
     } finally { client.release(); }
-    await db.pool.query("DELETE FROM upload_intents WHERE id=$1", [uploadId]);
+    await db.pool.query("DELETE FROM upload_intents WHERE id=$1", [uploadId]).catch((error) => console.error("committed upload intent cleanup failed", error));
     return Response.json({ storageProvider, attachment: { id, filename: intent.filename, sizeBytes: intent.sizeBytes } }, { status: 201 });
   } catch (error) {
     if (error instanceof AccessError) return accessErrorResponse(error);
